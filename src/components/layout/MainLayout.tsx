@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Sidebar, type NavItemKey } from './Sidebar';
 import { Header } from './Header';
 import { DatabaseInspectorModal } from '../common/DatabaseInspectorModal';
 import { seedDatabase } from '../../db/seed';
 
-import { DashboardView } from '../../pages/DashboardView';
-import { ChatsView } from '../../pages/ChatsView';
-import { InquiriesView } from '../../pages/InquiriesView';
-import { ContactsView } from '../../pages/ContactsView';
-import { TemplatesView } from '../../pages/TemplatesView';
-import { CampaignsView } from '../../pages/CampaignsView';
-import { MediaLibraryView } from '../../pages/MediaLibraryView';
-import { AnalyticsView } from '../../pages/AnalyticsView';
-import { SubscriptionView } from '../../pages/SubscriptionView';
-import { SettingsView } from '../../pages/SettingsView';
-import { AutomationView } from '../../pages/AutomationView';
+const DashboardView = lazy(() => import('../../pages/DashboardView').then((m) => ({ default: m.DashboardView })));
+const ChatsView = lazy(() => import('../../pages/ChatsView').then((m) => ({ default: m.ChatsView })));
+const InquiriesView = lazy(() => import('../../pages/InquiriesView').then((m) => ({ default: m.InquiriesView })));
+const ContactsView = lazy(() => import('../../pages/ContactsView').then((m) => ({ default: m.ContactsView })));
+const TemplatesView = lazy(() => import('../../pages/TemplatesView').then((m) => ({ default: m.TemplatesView })));
+const CampaignsView = lazy(() => import('../../pages/CampaignsView').then((m) => ({ default: m.CampaignsView })));
+const MediaLibraryView = lazy(() => import('../../pages/MediaLibraryView').then((m) => ({ default: m.MediaLibraryView })));
+const AnalyticsView = lazy(() => import('../../pages/AnalyticsView').then((m) => ({ default: m.AnalyticsView })));
+const SubscriptionView = lazy(() => import('../../pages/SubscriptionView').then((m) => ({ default: m.SubscriptionView })));
+const SettingsView = lazy(() => import('../../pages/SettingsView').then((m) => ({ default: m.SettingsView })));
+const AutomationView = lazy(() => import('../../pages/AutomationView').then((m) => ({ default: m.AutomationView })));
 
 export const MainLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavItemKey>('dashboard');
@@ -77,7 +77,9 @@ export const MainLayout: React.FC = () => {
         />
 
         <main className="main-content">
-          {renderActiveView()}
+          <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Loading view...</div>}>
+            {renderActiveView()}
+          </Suspense>
         </main>
       </div>
 

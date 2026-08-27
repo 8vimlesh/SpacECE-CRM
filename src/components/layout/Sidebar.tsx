@@ -11,7 +11,6 @@ import {
   CreditCard,
   Settings,
   Zap,
-  GraduationCap,
   X,
   Database
 } from 'lucide-react';
@@ -86,10 +85,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand Header */}
         <div className="sidebar-brand">
           <div className="brand-logo">
-            <GraduationCap className="brand-icon" />
+            <img src="/logo.png" alt="SpacECE Logo" className="brand-logo-img" />
           </div>
           <div className="brand-info">
-            <h1 className="brand-title">Spacece India</h1>
+            <h1 className="brand-title">SpacECE India</h1>
             <span className="brand-subtitle">WhatsApp CRM System</span>
           </div>
           <button className="mobile-close-btn" onClick={onClose} aria-label="Close sidebar">
@@ -172,21 +171,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .brand-logo {
-          width: 40px;
-          height: 40px;
+          width: 44px;
+          height: 44px;
           border-radius: var(--radius-md);
-          background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+          background-color: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 10px rgba(13, 148, 136, 0.4);
+          padding: 2px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
           flex-shrink: 0;
+          overflow: hidden;
         }
 
-        .brand-icon {
-          color: #ffffff;
-          width: 24px;
-          height: 24px;
+        .brand-logo-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          border-radius: calc(var(--radius-md) - 2px);
         }
 
         .brand-info {

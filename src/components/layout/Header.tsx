@@ -36,7 +36,8 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <div className="header-breadcrumb">
-          <span className="breadcrumb-root">Spacece CRM</span>
+          <img src="/logo.png" alt="SpacECE Logo" style={{ width: '22px', height: '22px', objectFit: 'contain', borderRadius: '4px' }} />
+          <span className="breadcrumb-root">SpacECE CRM</span>
           <span className="breadcrumb-separator">/</span>
           <span className="breadcrumb-current">{currentNav?.label || 'Dashboard'}</span>
         </div>
