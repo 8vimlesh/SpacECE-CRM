@@ -23,20 +23,34 @@ export function useSupabaseData<T>(
   useEffect(() => {
     loadData();
 
-    // Subscribe to realtime changes on table
-    const channel = supabase
-      .channel(`public:${tableName}-changes`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: tableName },
-        () => {
-          loadData();
-        }
-      )
-      .subscribe();
+    // Generate unique channel identifier per hook instance to prevent channel collision errors
+    const channelId = `realtime_${tableName}_${Math.random().toString(36).substring(2, 9)}`;
+    const channel = supabase.channel(channelId);
+
+    try {
+      channel
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: tableName },
+          () => {
+            loadData();
+          }
+        )
+        .subscribe((status, err) => {
+          if (err) {
+            console.warn(`Supabase Realtime subscription warning for ${tableName}:`, status, err);
+          }
+        });
+    } catch (e) {
+      console.warn(`Failed to set up realtime channel for ${tableName}:`, e);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      try {
+        supabase.removeChannel(channel);
+      } catch (e) {
+        // Ignore channel removal errors
+      }
     };
   }, [loadData, tableName]);
 
