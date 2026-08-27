@@ -3,16 +3,27 @@ import { useSupabaseData } from '../hooks/useSupabaseData';
 import { subscriptionService } from '../services/subscriptionService';
 import { contactsService } from '../services/contactsService';
 import { messagesService } from '../services/messagesService';
+import { useState } from 'react';
 import {
   Zap,
   CheckCircle2,
   FileText,
   Users,
   MessageSquare,
-  ShieldAlert
+  ShieldAlert,
+  Download,
+  Printer
 } from 'lucide-react';
 
 export const SubscriptionView: React.FC = () => {
+  const [activeReceipt, setActiveReceipt] = useState<{
+    id: string;
+    date: string;
+    amount: string;
+    plan: string;
+    status: string;
+  } | null>(null);
+
   // Supabase Queries
   const { data: subList } = useSupabaseData('subscriptions', async () => {
     const s = await subscriptionService.getSubscription();
@@ -202,7 +213,10 @@ export const SubscriptionView: React.FC = () => {
                       </span>
                     </td>
                     <td>
-                      <button className="btn btn-outline btn-sm">
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={() => setActiveReceipt(pmt)}
+                      >
                         <FileText size={14} /> Download Receipt
                       </button>
                     </td>
@@ -219,6 +233,64 @@ export const SubscriptionView: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Payment Receipt Modal */}
+      {activeReceipt && (
+        <div className="modal-overlay" onClick={() => setActiveReceipt(null)}>
+          <div className="modal-content receipt-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Payment Invoice Receipt ({activeReceipt.id})</h3>
+              <button className="modal-close" onClick={() => setActiveReceipt(null)}>✕</button>
+            </div>
+            <div className="modal-body receipt-modal-body">
+              <div className="receipt-header-banner">
+                <div className="brand-title-lg">SpacECE India Foundation</div>
+                <div className="receipt-tag">TAX INVOICE / OFFICIAL RECEIPT</div>
+              </div>
+
+              <div className="receipt-grid">
+                <div>
+                  <span className="receipt-label">Invoice Number:</span>
+                  <strong>{activeReceipt.id}</strong>
+                </div>
+                <div>
+                  <span className="receipt-label">Payment Date:</span>
+                  <strong>{activeReceipt.date}</strong>
+                </div>
+                <div>
+                  <span className="receipt-label">Subscription Plan:</span>
+                  <strong>{activeReceipt.plan}</strong>
+                </div>
+                <div>
+                  <span className="receipt-label">Payment Status:</span>
+                  <span className="badge badge-success">{activeReceipt.status}</span>
+                </div>
+                <div className="full-col">
+                  <span className="receipt-label">Total Amount Paid:</span>
+                  <strong className="receipt-amount-text">{activeReceipt.amount}</strong>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline mr-auto" onClick={() => window.print()}>
+                <Printer size={16} /> Print Receipt
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  alert(`Receipt ${activeReceipt.id} downloaded successfully!`);
+                  setActiveReceipt(null);
+                }}
+              >
+                <Download size={16} /> Download PDF
+              </button>
+              <button className="btn btn-secondary" onClick={() => setActiveReceipt(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Master CSS for Subscription View */}
       <style>{`
@@ -310,6 +382,66 @@ export const SubscriptionView: React.FC = () => {
           justify-content: space-between;
           font-size: 0.78125rem;
           color: var(--slate-500);
+        }
+
+        .receipt-modal {
+          max-width: 520px;
+        }
+
+        .receipt-modal-body {
+          padding: 1.5rem;
+        }
+
+        .receipt-header-banner {
+          background-color: var(--slate-900);
+          color: #ffffff;
+          padding: 1rem 1.25rem;
+          border-radius: var(--radius-md);
+          margin-bottom: 1.25rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .brand-title-lg {
+          font-weight: 800;
+          font-size: 1.1rem;
+        }
+
+        .receipt-tag {
+          font-size: 0.7rem;
+          background-color: rgba(255, 255, 255, 0.15);
+          padding: 0.2rem 0.5rem;
+          border-radius: var(--radius-sm);
+          letter-spacing: 0.05em;
+        }
+
+        .receipt-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+          font-size: 0.875rem;
+        }
+
+        .receipt-grid .full-col {
+          grid-column: span 2;
+          background-color: var(--slate-50);
+          padding: 0.875rem;
+          border-radius: var(--radius-md);
+          border: 1px solid var(--slate-200);
+          margin-top: 0.5rem;
+        }
+
+        .receipt-label {
+          display: block;
+          font-size: 0.75rem;
+          color: var(--slate-500);
+          margin-bottom: 0.15rem;
+        }
+
+        .receipt-amount-text {
+          font-size: 1.25rem;
+          color: var(--primary-700);
         }
       `}</style>
     </div>

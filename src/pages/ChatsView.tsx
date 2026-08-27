@@ -34,6 +34,28 @@ interface ConversationItem {
   unreadCount: number;
 }
 
+const renderFormattedMessageText = (content: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = content.split(urlRegex);
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="chat-inline-link"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
 export const ChatsView: React.FC = () => {
   // Supabase queries
   const { data: contacts } = useSupabaseData('contacts', () => contactsService.getAll());
@@ -364,7 +386,7 @@ export const ChatsView: React.FC = () => {
                         className={`message-row ${isOut ? 'outgoing-row' : 'incoming-row'}`}
                       >
                         <div className={`message-bubble-card ${isOut ? 'out-bubble' : 'in-bubble'}`}>
-                          <div className="bubble-text">{msg.content}</div>
+                          <div className="bubble-text">{renderFormattedMessageText(msg.content)}</div>
 
                           <div className="bubble-footer-meta">
                             <span className="meta-time">{msgTime}</span>
@@ -1108,6 +1130,22 @@ export const ChatsView: React.FC = () => {
 
         .simulate-modal {
           max-width: 500px;
+        }
+
+        .chat-inline-link {
+          color: #2563eb;
+          text-decoration: underline;
+          word-break: break-all;
+          font-weight: 600;
+        }
+
+        .out-bubble .chat-inline-link {
+          color: #1e40af;
+        }
+
+        .chat-inline-link:hover {
+          color: #1d4ed8;
+          text-decoration: none;
         }
       `}</style>
     </div>
