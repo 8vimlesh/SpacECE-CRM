@@ -562,7 +562,7 @@ export const MediaLibraryView: React.FC = () => {
         }
 
         .media-thumb-icon.video { color: #9333ea; }
-        .media-thumb-icon.audio { color: #0d9488; }
+        .media-thumb-icon.audio { color: var(--primary-600); }
         .media-thumb-icon.pdf { color: #e11d48; }
 
         .play-overlay-badge {

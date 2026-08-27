@@ -195,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
         .search-input:focus {
           background-color: #ffffff;
           border-color: var(--primary-500);
-          box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+          box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18);
         }
 
         .header-action-btn {

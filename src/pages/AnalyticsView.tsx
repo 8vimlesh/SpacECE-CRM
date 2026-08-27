@@ -215,14 +215,14 @@ export const AnalyticsView: React.FC = () => {
 
                 return (
                   <g key={stat.dateStr} className="chart-day-group">
-                    {/* Outbound Bar (Teal) */}
+                    {/* Outbound Bar (Amber) */}
                     <rect
                       x={xBase}
                       y={outboundY}
                       width="20"
                       height={Math.max(outboundH, 4)}
                       rx="3"
-                      fill="#0d9488"
+                      fill="#d97706"
                       className="bar-rect"
                     />
                     <text x={xBase + 10} y={outboundY - 5} textAnchor="middle" className="bar-val-text">

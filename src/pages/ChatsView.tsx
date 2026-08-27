@@ -921,8 +921,8 @@ export const ChatsView: React.FC = () => {
         }
 
         .out-bubble {
-          background-color: #ccfbf1;
-          color: #0f766e;
+          background-color: var(--primary-100);
+          color: var(--primary-900);
           border-bottom-right-radius: 2px;
         }
 

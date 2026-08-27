@@ -209,7 +209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         .brand-subtitle {
           font-size: 0.75rem;
-          color: #fbbf24;
+          color: var(--primary-400);
           font-weight: 600;
           opacity: 0.95;
           display: block;
@@ -272,7 +272,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .nav-item.active {
           color: #ffffff;
           background: linear-gradient(90deg, rgba(245, 158, 11, 0.26) 0%, rgba(245, 158, 11, 0.06) 100%);
-          border-left: 3px solid #f59e0b;
+          border-left: 3px solid var(--primary-500);
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
@@ -284,7 +284,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         .nav-item:hover .nav-icon,
         .nav-item.active .nav-icon {
-          color: #f59e0b;
+          color: var(--primary-400);
         }
 
         .nav-label {
