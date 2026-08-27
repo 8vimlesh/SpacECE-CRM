@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spacece WhatsApp CRM - Full Project Walkthrough</title>
+  <style>
+    :root {
+      --primary-600: #0d9488;
+      --primary-700: #0f766e;
+      --navy-900: #0f172a;
+      --navy-800: #1e293b;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --emerald-600: #059669;
+      --rose-600: #e11d48;
+      --amber-600: #d97706;
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--slate-50);
+      color: var(--slate-700);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 2.5rem;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--slate-200);
+    }
+
+    .header-banner {
+      background: linear-gradient(135deg, var(--navy-900), var(--navy-800));
+      color: #ffffff;
+      padding: 2rem;
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+    }
+
+    .header-banner h1 {
+      font-size: 1.875rem;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+    }
+
+    .header-banner p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    .badge-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background-color: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .tag.success {
+      background-color: var(--emerald-600);
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      color: var(--navy-900);
+      border-bottom: 2px solid var(--slate-200);
+      padding-bottom: 0.5rem;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      color: var(--primary-700);
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    p, li {
+      font-size: 0.9375rem;
+      color: var(--slate-600);
+      margin-bottom: 0.75rem;
+    }
+
+    ul, ol {
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+
+    code {
+      font-family: 'Fira Code', Consolas, Monaco, monospace;
+      background-color: var(--slate-100);
+      color: var(--navy-900);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    pre {
+      background-color: var(--navy-900);
+      color: #38bdf8;
+      padding: 1.25rem;
+      border-radius: var(--radius);
+      font-family: 'Fira Code', Consolas, Monaco, monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin-bottom: 1.25rem;
+      line-height: 1.45;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    th {
+      background-color: var(--slate-100);
+      color: var(--navy-900);
+      font-weight: 700;
+    }
+
+    tr:hover {
+      background-color: var(--slate-50);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .status-completed {
+      background-color: #d1fae5;
+      color: #047857;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      background-color: #ffffff;
+    }
+
+    .card-title {
+      font-weight: 700;
+      color: var(--navy-900);
+      margin-bottom: 0.5rem;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--slate-200);
+      font-size: 0.8125rem;
+      color: var(--slate-600);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- HEADER BANNER -->
+    <div class="header-banner">
+      <h1>Spacece WhatsApp Communication & Tracking System</h1>
+      <p>Official Master Project Walkthrough & Architecture Technical Report</p>
+      <div class="badge-bar">
+        <span class="tag success">✓ 100% Completed</span>
+        <span class="tag">React 18 + Vite + TypeScript</span>
+        <span class="tag">Dexie.js (IndexedDB)</span>
+        <span class="tag">Meta Cloud API v18.0</span>
+        <span class="tag">n8n Webhook Integration</span>
+      </div>
+    </div>
+
+    <!-- 1. OVERVIEW -->
+    <h2>1. Executive Summary</h2>
+    <p>
+      The <strong>Spacece WhatsApp Communication & Tracking System</strong> is an enterprise CRM platform engineered for <strong>Spacece India Foundation</strong>. It combines unified parent WhatsApp messaging, Kanban pipeline lead tracking, CSV bulk contact imports, Meta template management, audience-targeted broadcast campaigns, centralized document storage, real-time analytics, quota tracking, and a reactive Automation Engine for n8n webhooks.
+    </p>
+
+    <!-- 2. ARCHITECTURE & DATA MODEL -->
+    <h2>2. System Architecture & Database Reference</h2>
+    <p>All database tables persist locally in browser IndexedDB named <code>SpaceceIndiaFoundationCRM</code> using <code>Dexie.js</code>:</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Table Name</th>
+          <th>Entity Description</th>
+          <th>Key Fields & Data Attributes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>contacts</code></td>
+          <td>Parent Contacts Directory</td>
+          <td><code>id, name, phone, linkedStudentClass, tags, optedOut, status, createdAt</code></td>
+        </tr>
+        <tr>
+          <td><code>inquiries</code></td>
+          <td>Admission Leads Pipeline</td>
+          <td><code>id, contactId, pipelineStage, followUpDate, notes</code></td>
+        </tr>
+        <tr>
+          <td><code>messages</code></td>
+          <td>WhatsApp Message Logs</td>
+          <td><code>id, contactId, direction, type, content, status, timestamp</code></td>
+        </tr>
+        <tr>
+          <td><code>templates</code></td>
+          <td>WhatsApp Message Formats</td>
+          <td><code>id, name, category, status, messageBody</code></td>
+        </tr>
+        <tr>
+          <td><code>campaigns</code></td>
+          <td>Broadcast Announcements</td>
+          <td><code>id, name, templateId, audienceType, status, sentCount, createdAt</code></td>
+        </tr>
+        <tr>
+          <td><code>media</code></td>
+          <td>Educational Files Storage</td>
+          <td><code>id, fileName, fileType, fileUrl, uploadDate, size</code></td>
+        </tr>
+        <tr>
+          <td><code>whatsAppSettings</code></td>
+          <td>Meta API Credentials</td>
+          <td><code>id, displayName, phoneNumber, phoneNumberId, wabaId, accessToken, connectionStatus</code></td>
+        </tr>
+        <tr>
+          <td><code>subscription</code></td>
+          <td>Quotas & Billing Invoices</td>
+          <td><code>id, planName, contactLimit, messageLimit, paymentHistory, status, renewalDate</code></td>
+        </tr>
+        <tr>
+          <td><code>automationRules</code></td>
+          <td>Reactive Event Rules</td>
+          <td><code>id, name, description, triggerEvent, conditions, actions, status, executionCount</code></td>
+        </tr>
+        <tr>
+          <td><code>automationLogs</code></td>
+          <td>Audit Logs Table</td>
+          <td><code>id, timestamp, ruleId, ruleName, type, recipient, status, notes</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 3. ALL 11 MODULES -->
+    <h2>3. Complete Walkthrough of All 11 Modules</h2>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-title">Module 1: Foundation & Layout</div>
+        <p>11-route sidebar navigation drawer, top global search header bar, reactive WhatsApp status indicator, and IndexedDB inspector developer modal.</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Module 2: WhatsApp Settings</div>
+        <p>Meta API credentials verification form (Phone Number ID, WABA ID, Access Token password masking with eye toggle, and real API validation).</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Module 3: WhatsApp Inbox / Chats</div>
+        <p>3-panel inbox (conversation list, live reply thread, parent profile sidepanel), search, All/Unread filter tabs, and incoming message simulator.</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Module 4: Inquiry / Lead Board</div>
+        <p>4-stage Kanban pipeline (New Inquiry → Contacted → Interested → Admitted), drag-and-drop cards, follow-up urgency badges, and 5 date filter tabs.</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Module 5: Contacts CRM & CSV Import</div>
+        <p>Parent contact directory, search, duplicate phone prevention, opt-out flag restriction, and CSV bulk import engine with pre-validation preview.</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Module 6: Message Templates</div>
+        <p>Meta template manager supporting Spacece categories (Fee Reminder, Admission, Event, Holiday), approval status filters, and template editor.</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Module 7: Broadcast Campaigns</div>
+        <p>3-step wizard workflow (Choose Audience → Choose Approved Template → Review & Send), opt-out audience exclusion, and live broadcast dispatching.</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Module 8: Media Library</div>
+        <p>Centralized storage for Images, Videos, Audio, and Documents with drag-and-drop upload, size checks (<=50MB), and preview viewer modal.</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Module 9: Analytics & Reports</div>
+        <p>Live database KPI metrics, 7-day SVG message volume trend chart, WhatsApp connection health check, and 1-click CSV report export.</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Module 10: Subscription & Usage</div>
+        <p>Real-time contact capacity & monthly template-message usage tracking, visual progress bars, quota limit alert banners, and payment invoices.</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Module 11: Automation & n8n Engine</div>
+        <p>Reactive event trigger engine, opt-out protection safeguard, 4-step rule creation wizard, n8n webhook signing secret setup, and audit logs.</p>
+        <span class="status-badge status-completed">Completed & Verified</span>
+      </div>
+    </div>
+
+    <!-- 4. VERIFICATION & BUILD -->
+    <h2>4. Production Build & Quality Verification Output</h2>
+    <pre>
+> clone-crm@0.0.0 build
+> tsc -b && vite build
+
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 1826 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.49 kB │ gzip:   0.32 kB
+dist/assets/index-pijCN2ef.css    7.56 kB │ gzip:   2.28 kB
+dist/assets/index-CZnpJI84.js   514.21 kB │ gzip: 137.36 kB
+
+✓ built in 1.03s
+    </pre>
+
+    <!-- 5. HOW TO TEST -->
+    <h2>5. How to Test Every Module</h2>
+    <ol>
+      <li>Open <code>http://localhost:5173/</code> in your browser.</li>
+      <li><strong>Settings</strong>: Verify WhatsApp credentials and test Access Token password masking.</li>
+      <li><strong>Chats Inbox</strong>: Send a reply to a parent and test the <strong>Test Incoming Message</strong> simulation tool.</li>
+      <li><strong>Inquiry Board</strong>: Drag a lead card across pipeline stages (New Inquiry → Contacted → Interested → Admitted).</li>
+      <li><strong>Contacts & CSV Import</strong>: Add a duplicate phone number to test duplicate prevention; test CSV bulk import file.</li>
+      <li><strong>Templates & Campaigns</strong>: Create a template, set status to Approved, and run a 3-step broadcast campaign.</li>
+      <li><strong>Media Library</strong>: Upload an image or PDF document and click Preview to open the full-screen viewer modal.</li>
+      <li><strong>Analytics & Reports</strong>: View the 7-day SVG message trend chart and click Export Report (CSV).</li>
+      <li><strong>Subscription / Usage</strong>: Inspect live contact import capacity and monthly message quota progress bars.</li>
+      <li><strong>Automation Engine</strong>: Toggle a rule status pill to ACTIVE, create a new inquiry, and verify the automated execution log in Automation Audit Logs.</li>
+    </ol>
+
+    <div class="footer">
+      Spacece India Foundation • WhatsApp Communication & Tracking System • All Rights Reserved
+    </div>
+
+  </div>
+</body>
+</html>
