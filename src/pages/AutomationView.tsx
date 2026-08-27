@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type AutomationRule, type AutomationRuleCondition, type AutomationRuleAction } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { automationService } from '../services/automationService';
+import { templatesService } from '../services/templatesService';
+import { whatsappSettingsService } from '../services/whatsappSettingsService';
+import type { AutomationRule, AutomationRuleCondition, AutomationRuleAction } from '../db/database';
 import { triggerAutomationEvent } from '../services/automationEngine';
 import {
   Zap,
@@ -31,14 +34,15 @@ import {
 type PayloadDocType = 'text' | 'image' | 'document' | 'list';
 
 export const AutomationView: React.FC = () => {
-  // Live Dexie Database Queries
-  const rules = useLiveQuery(() => db.automationRules.toArray(), [], []);
-  const logs = useLiveQuery(() => db.automationLogs.reverse().toArray(), [], []);
-  const templates = useLiveQuery(() => db.templates.toArray(), [], []);
-  const settings = useLiveQuery(async () => {
-    const list = await db.whatsAppSettings.toArray();
-    return list[0];
-  }, [], undefined);
+  // Supabase Queries
+  const { data: rules, refetch: refetchRules } = useSupabaseData('automation_rules', () => automationService.getRules());
+  const { data: logs, refetch: refetchLogs } = useSupabaseData('automation_logs', () => automationService.getLogs());
+  const { data: templates } = useSupabaseData('templates', () => templatesService.getAll());
+  const { data: settingsList } = useSupabaseData('whatsapp_settings', async () => {
+    const s = await whatsappSettingsService.get();
+    return s ? [s] : [];
+  });
+  const settings = settingsList?.[0];
 
   // UI State for Wizard
   const [showWizardModal, setShowWizardModal] = useState(false);
@@ -83,7 +87,8 @@ export const AutomationView: React.FC = () => {
   const handleToggleRuleStatus = async (rule: AutomationRule) => {
     if (rule.id) {
       const newStatus = rule.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-      await db.automationRules.update(rule.id, { status: newStatus });
+      await automationService.updateRule(rule.id, { status: newStatus });
+      refetchRules();
     }
   };
 
@@ -95,12 +100,14 @@ export const AutomationView: React.FC = () => {
       direction: 'in',
       messageText: `[Manual Test Trigger - ${rule.name}]`
     });
+    refetchLogs();
   };
 
   // Delete Rule Handler
   const handleDeleteRule = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this automation rule?')) {
-      await db.automationRules.delete(id);
+      await automationService.deleteRule(id);
+      refetchRules();
     }
   };
 
@@ -125,7 +132,7 @@ export const AutomationView: React.FC = () => {
     }
 
     if (editingRuleId) {
-      await db.automationRules.update(editingRuleId, {
+      await automationService.updateRule(editingRuleId, {
         name: ruleName.trim(),
         description: ruleDescription.trim(),
         triggerEvent,
@@ -134,7 +141,7 @@ export const AutomationView: React.FC = () => {
         status: ruleActive ? 'ACTIVE' : 'INACTIVE'
       });
     } else {
-      await db.automationRules.add({
+      await automationService.addRule({
         name: ruleName.trim(),
         description: ruleDescription.trim(),
         triggerEvent,
@@ -147,20 +154,19 @@ export const AutomationView: React.FC = () => {
       });
     }
 
+    refetchRules();
     setShowWizardModal(false);
   };
 
   // Save Webhook Settings
   const handleSaveWebhookSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (settings?.id) {
-      await db.whatsAppSettings.update(settings.id, {
-        webhookUrl: webhookUrl.trim(),
-        webhookSecret: signingSecret.trim()
-      });
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    }
+    await whatsappSettingsService.save({
+      webhookUrl: webhookUrl.trim(),
+      webhookSecret: signingSecret.trim()
+    });
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
   };
 
   // Payload JSON Specifications

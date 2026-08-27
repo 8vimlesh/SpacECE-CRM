@@ -1,6 +1,10 @@
 import React from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { contactsService } from '../services/contactsService';
+import { inquiriesService } from '../services/inquiriesService';
+import { messagesService } from '../services/messagesService';
+import { campaignsService } from '../services/campaignsService';
+import { templatesService } from '../services/templatesService';
 import type { NavItemKey } from '../components/layout/Sidebar';
 import {
   Users,
@@ -21,23 +25,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigate,
   onOpenDbInspector
 }) => {
-  const contactsCount = useLiveQuery(() => db.contacts.count(), [], 0);
-  const inquiriesCount = useLiveQuery(() => db.inquiries.count(), [], 0);
-  const messagesCount = useLiveQuery(() => db.messages.count(), [], 0);
-  const campaignsCount = useLiveQuery(() => db.campaigns.count(), [], 0);
-  const templatesCount = useLiveQuery(() => db.templates.count(), [], 0);
+  const { data: contacts } = useSupabaseData('contacts', () => contactsService.getAll());
+  const { data: inquiries } = useSupabaseData('inquiries', () => inquiriesService.getAll());
+  const { data: messages } = useSupabaseData('messages', () => messagesService.getAll());
+  const { data: campaigns } = useSupabaseData('campaigns', () => campaignsService.getAll());
+  const { data: templates } = useSupabaseData('templates', () => templatesService.getAll());
 
-  const recentInquiries = useLiveQuery(async () => {
-    const list = await db.inquiries.toArray();
-    return list.slice(-3).reverse();
-  }, [], []);
+  const contactsCount = contacts?.length || 0;
+  const inquiriesCount = inquiries?.length || 0;
+  const messagesCount = messages?.length || 0;
+  const campaignsCount = campaigns?.length || 0;
+  const templatesCount = templates?.length || 0;
 
-  const contactsMap = useLiveQuery(async () => {
-    const list = await db.contacts.toArray();
-    const map: Record<number, string> = {};
-    list.forEach(c => { if (c.id) map[c.id] = c.name; });
-    return map;
-  }, []);
+  const recentInquiries = (inquiries || []).slice(-3).reverse();
+
+  const contactsMap: Record<number, string> = {};
+  (contacts || []).forEach((c) => {
+    if (c.id) contactsMap[c.id] = c.name;
+  });
 
   return (
     <div className="dashboard-page">

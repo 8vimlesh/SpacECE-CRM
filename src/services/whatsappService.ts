@@ -1,4 +1,7 @@
-import { db, type Contact, type Message } from '../db/database';
+import type { Contact, Message } from '../db/database';
+import { whatsappSettingsService } from './whatsappSettingsService';
+import { messagesService } from './messagesService';
+import { contactsService } from './contactsService';
 
 export interface SendMessageParams {
   contactId: number;
@@ -14,15 +17,14 @@ export interface SendMessageResult {
 
 /**
  * Send an outgoing WhatsApp message to a parent.
- * Dispatches via Meta Cloud API if connected, and saves record to IndexedDB.
+ * Dispatches via Meta Cloud API if connected, and saves record to Supabase.
  */
 export async function sendWhatsAppMessage({
   contactId,
   recipientPhone,
   messageText
 }: SendMessageParams): Promise<SendMessageResult> {
-  const settingsList = await db.whatsAppSettings.toArray();
-  const settings = settingsList[0];
+  const settings = await whatsappSettingsService.get();
 
   const isApiConnected = settings?.connectionStatus === 'CONNECTED';
   const cleanPhone = recipientPhone.replace(/[^\d+]/g, '');
@@ -31,7 +33,7 @@ export async function sendWhatsAppMessage({
   let apiErrorMessage = '';
 
   // If Meta API credentials are connected, attempt real graph API call
-  if (isApiConnected && settings.phoneNumberId && settings.accessToken) {
+  if (isApiConnected && settings?.phoneNumberId && settings?.accessToken) {
     try {
       const endpoint = `https://graph.facebook.com/v18.0/${settings.phoneNumberId}/messages`;
       const response = await fetch(endpoint, {
@@ -60,8 +62,8 @@ export async function sendWhatsAppMessage({
     }
   }
 
-  // Save outgoing message to IndexedDB database
-  const newMsgId = await db.messages.add({
+  // Save outgoing message to Supabase database
+  const savedRecord = await messagesService.add({
     contactId,
     direction: 'out',
     type: 'text',
@@ -70,42 +72,37 @@ export async function sendWhatsAppMessage({
     timestamp: new Date().toISOString()
   });
 
-  const savedRecord = await db.messages.get(newMsgId as number);
-
   if (isApiConnected && !isApiSuccess) {
     return {
       success: false,
-      messageRecord: savedRecord,
+      messageRecord: savedRecord || undefined,
       error: `Message saved locally, but Meta API dispatch failed: ${apiErrorMessage}`
     };
   }
 
   return {
     success: true,
-    messageRecord: savedRecord
+    messageRecord: savedRecord || undefined
   };
 }
 
 /**
- * Mark all unread incoming messages for a contact as 'read' in IndexedDB.
+ * Mark all unread incoming messages for a contact as 'read' in Supabase.
  */
 export async function markConversationAsRead(contactId: number): Promise<void> {
-  const unreadMessages = await db.messages
-    .where('contactId')
-    .equals(contactId)
-    .filter(m => m.direction === 'in' && m.status !== 'read')
-    .toArray();
+  const messages = await messagesService.getByContactId(contactId);
+  const unreadIncoming = messages.filter((m) => m.direction === 'in' && m.status !== 'read');
 
-  for (const msg of unreadMessages) {
+  for (const msg of unreadIncoming) {
     if (msg.id) {
-      await db.messages.update(msg.id, { status: 'read' });
+      await messagesService.update(msg.id, { status: 'read' });
     }
   }
 }
 
 /**
  * Simulates receiving a real incoming parent WhatsApp message for testing.
- * Automatically matches or creates contact in IndexedDB.
+ * Automatically matches or creates contact in Supabase.
  */
 export async function receiveIncomingWhatsAppMessage({
   phone,
@@ -119,12 +116,12 @@ export async function receiveIncomingWhatsAppMessage({
   studentClass?: string;
 }): Promise<{ contact: Contact; message: Message }> {
   // 1. Check if contact exists by phone number match
-  const contacts = await db.contacts.toArray();
-  let contact = contacts.find(c => c.phone.replace(/[^\d]/g, '') === phone.replace(/[^\d]/g, ''));
+  const contacts = await contactsService.getAll();
+  let contact = contacts.find((c) => c.phone.replace(/[^\d]/g, '') === phone.replace(/[^\d]/g, ''));
 
   if (!contact) {
-    // Create new contact record for unrecognized incoming phone number
-    const newContactId = await db.contacts.add({
+    // Create new contact record in Supabase for unrecognized incoming phone number
+    const newContact = await contactsService.add({
       name: parentName || `Parent (${phone})`,
       phone: phone,
       linkedStudentClass: studentClass || 'Student Class Pending Binding',
@@ -133,20 +130,18 @@ export async function receiveIncomingWhatsAppMessage({
       optedOut: false,
       createdAt: new Date().toISOString()
     });
-    contact = (await db.contacts.get(newContactId as number))!;
+    contact = newContact!;
   }
 
-  // 2. Add incoming message
-  const msgId = await db.messages.add({
+  // 2. Add incoming message into Supabase
+  const message = (await messagesService.add({
     contactId: contact.id!,
     direction: 'in',
     type: 'text',
     content,
     status: 'delivered', // marked unread initially
     timestamp: new Date().toISOString()
-  });
-
-  const message = (await db.messages.get(msgId as number))!;
+  }))!;
 
   return { contact, message };
 }

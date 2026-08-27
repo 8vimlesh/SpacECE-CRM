@@ -1,6 +1,8 @@
 import React from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { subscriptionService } from '../services/subscriptionService';
+import { contactsService } from '../services/contactsService';
+import { messagesService } from '../services/messagesService';
 import {
   Zap,
   CheckCircle2,
@@ -11,14 +13,16 @@ import {
 } from 'lucide-react';
 
 export const SubscriptionView: React.FC = () => {
-  // Live IndexedDB Queries
-  const subRecord = useLiveQuery(async () => {
-    const list = await db.subscription.toArray();
-    return list[0];
-  }, [], undefined);
+  // Supabase Queries
+  const { data: subList } = useSupabaseData('subscriptions', async () => {
+    const s = await subscriptionService.getSubscription();
+    return s ? [s] : [];
+  });
+  const subRecord = subList?.[0];
 
-  const liveContactCount = useLiveQuery(() => db.contacts.count(), [], 0);
-  const allMessages = useLiveQuery(() => db.messages.toArray(), [], []);
+  const { data: contacts } = useSupabaseData('contacts', () => contactsService.getAll());
+  const { data: allMessages } = useSupabaseData('messages', () => messagesService.getAll());
+  const liveContactCount = contacts?.length || 0;
 
   // Compute Current Month YYYY-MM
   const currentMonthStr = new Date().toISOString().substring(0, 7);

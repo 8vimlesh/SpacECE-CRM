@@ -1,4 +1,9 @@
-import { db, type AutomationRule, type Contact, type Inquiry } from '../db/database';
+import type { AutomationRule, Contact, Inquiry } from '../db/database';
+import { automationService } from './automationService';
+import { contactsService } from './contactsService';
+import { inquiriesService } from './inquiriesService';
+import { templatesService } from './templatesService';
+import { whatsappSettingsService } from './whatsappSettingsService';
 import { sendWhatsAppMessage } from './whatsappService';
 
 // Idempotency cache map (key -> timestamp)
@@ -27,11 +32,10 @@ export async function triggerAutomationEvent(
 ): Promise<void> {
   try {
     // 1. Fetch matching ACTIVE rules
-    const matchingRules = await db.automationRules
-      .where('triggerEvent')
-      .equals(eventType)
-      .and((r) => r.status === 'ACTIVE')
-      .toArray();
+    const allRules = await automationService.getRules();
+    const matchingRules = allRules.filter(
+      (r) => r.triggerEvent === eventType && r.status === 'ACTIVE'
+    );
 
     if (!matchingRules || matchingRules.length === 0) {
       return;
@@ -60,10 +64,14 @@ async function processAutomationRule(
   // Fetch Contact & Phone Number
   let contact: Contact | undefined = payload.contact;
   if (!contact && payload.contactId) {
-    contact = await db.contacts.get(payload.contactId);
+    const allContacts = await contactsService.getAll();
+    contact = allContacts.find((c) => c.id === payload.contactId);
   }
   if (!contact && payload.recipientPhone) {
-    contact = (await db.contacts.where('phone').equals(payload.recipientPhone).first());
+    const allContacts = await contactsService.getAll();
+    contact = allContacts.find(
+      (c) => c.phone.replace(/[^\d]/g, '') === payload.recipientPhone?.replace(/[^\d]/g, '')
+    );
   }
 
   const recipientStr = contact ? `${contact.name} (${contact.phone})` : payload.recipientPhone || 'System Event';
@@ -132,7 +140,7 @@ async function processAutomationRule(
 
   // Handle Condition Failure
   if (!conditionsPassed) {
-    await db.automationLogs.add({
+    await automationService.addLog({
       timestamp,
       ruleId: rule.id,
       ruleName,
@@ -152,7 +160,7 @@ async function processAutomationRule(
   );
 
   if (hasWhatsAppAction && contact && contact.optedOut) {
-    await db.automationLogs.add({
+    await automationService.addLog({
       timestamp,
       ruleId: rule.id,
       ruleName,
@@ -172,13 +180,13 @@ async function processAutomationRule(
   try {
     for (const action of rule.actions) {
       if (action.actionType === 'SEND_TEMPLATE' && contact) {
-        const tplName = action.params.templateName || 'admission_inquiry_welcome';
-        const templatesList = await db.templates.where('name').equals(tplName).toArray();
-        const tpl = templatesList[0];
+        const tplName = action.params.templateName || 'fee_due_reminder_v1';
+        const allTemplates = await templatesService.getAll();
+        const tpl = allTemplates.find((t) => t.name === tplName);
 
         const msgText = tpl
           ? tpl.messageBody.replace('{{1}}', contact.name).replace('{{2}}', contact.linkedStudentClass)
-          : `[Auto-Response] Thank you for connecting with Spacece India Foundation, ${contact.name}!`;
+          : `[Auto-Response] Thank you for connecting with SpacECE India Foundation, ${contact.name}!`;
 
         await sendWhatsAppMessage({
           contactId: contact.id!,
@@ -188,7 +196,7 @@ async function processAutomationRule(
 
         executedActionsSummary.push(`Sent WhatsApp Template "${tplName}"`);
       } else if (action.actionType === 'SEND_TEXT' && contact) {
-        const msgText = action.params.text || 'Hello from Spacece India Foundation Automation System.';
+        const msgText = action.params.text || 'Hello from SpacECE India Foundation Automation System.';
         await sendWhatsAppMessage({
           contactId: contact.id!,
           recipientPhone: contact.phone,
@@ -198,7 +206,7 @@ async function processAutomationRule(
         executedActionsSummary.push('Sent WhatsApp Text');
       } else if (action.actionType === 'UPDATE_STAGE' && payload.inquiryId) {
         const newStage = action.params.pipelineStage || 'Contacted';
-        await db.inquiries.update(payload.inquiryId, {
+        await inquiriesService.update(payload.inquiryId, {
           pipelineStage: newStage as any
         });
         executedActionsSummary.push(`Updated Inquiry Stage to "${newStage}"`);
@@ -206,27 +214,28 @@ async function processAutomationRule(
         const newTag = action.params.tag || 'Automated';
         const currentTags = contact.tags || [];
         if (!currentTags.includes(newTag)) {
-          await db.contacts.update(contact.id, {
+          await contactsService.update(contact.id, {
             tags: [...currentTags, newTag]
           });
         }
         executedActionsSummary.push(`Added Tag "${newTag}" to Contact`);
       } else if (action.actionType === 'SEND_WEBHOOK') {
-        const settingsList = await db.whatsAppSettings.toArray();
-        const targetUrl = action.params.webhookUrl || settingsList[0]?.webhookUrl || 'https://n8n.spacece.org/webhook/whatsapp-events';
+        const settings = await whatsappSettingsService.get();
+        const targetUrl = action.params.webhookUrl || settings?.webhookUrl || 'https://n8n.spacece.org/webhook/whatsapp-events';
         
-        // Simulating webhook POST dispatch
         executedActionsSummary.push(`Dispatched Webhook Payload to ${targetUrl}`);
       }
     }
 
     // 6. Record Execution Success
-    await db.automationRules.update(rule.id!, {
-      executionCount: (rule.executionCount || 0) + 1,
-      lastExecutedAt: timestamp
-    });
+    if (rule.id) {
+      await automationService.updateRule(rule.id, {
+        executionCount: (rule.executionCount || 0) + 1,
+        lastExecutedAt: timestamp
+      });
+    }
 
-    await db.automationLogs.add({
+    await automationService.addLog({
       timestamp,
       ruleId: rule.id,
       ruleName,
@@ -238,7 +247,7 @@ async function processAutomationRule(
       actionsExecuted: executedActionsSummary.join('; ')
     });
   } catch (err: any) {
-    await db.automationLogs.add({
+    await automationService.addLog({
       timestamp,
       ruleId: rule.id,
       ruleName,

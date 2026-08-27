@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Inquiry, type Contact } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { inquiriesService } from '../services/inquiriesService';
+import { contactsService } from '../services/contactsService';
+import type { Inquiry, Contact } from '../db/database';
 import { triggerAutomationEvent } from '../services/automationEngine';
 import {
   Plus,
@@ -17,8 +19,8 @@ import {
 type FilterMode = 'all' | 'overdue' | 'today' | 'tomorrow' | 'ongoing' | 'upcoming';
 
 export const InquiriesView: React.FC = () => {
-  const inquiries = useLiveQuery(() => db.inquiries.toArray(), [], []);
-  const contacts = useLiveQuery(() => db.contacts.toArray(), [], []);
+  const { data: inquiries, refetch: refetchInquiries } = useSupabaseData('inquiries', () => inquiriesService.getAll());
+  const { data: contacts } = useSupabaseData('contacts', () => contactsService.getAll());
 
   // UI State
   const [activeFilter, setActiveFilter] = useState<FilterMode>('all');
@@ -108,9 +110,10 @@ export const InquiriesView: React.FC = () => {
     if (!inquiryIdStr) return;
 
     const id = Number(inquiryIdStr);
-    const existing = await db.inquiries.get(id);
+    const existing = (inquiries || []).find((i) => i.id === id);
     if (existing) {
-      await db.inquiries.update(id, { pipelineStage: targetStage });
+      await inquiriesService.update(id, { pipelineStage: targetStage });
+      refetchInquiries();
 
       // Trigger Automation Event for Stage Change
       triggerAutomationEvent('INQUIRY_STAGE_CHANGED', {
@@ -130,20 +133,23 @@ export const InquiriesView: React.FC = () => {
       return;
     }
 
-    const newId = await db.inquiries.add({
+    const created = await inquiriesService.add({
       contactId: Number(newContactId),
       pipelineStage: newStage,
       followUpDate: newFollowUpDate,
       notes: newNotes.trim() || 'No initial notes.',
       createdAt: new Date().toISOString()
     });
+    refetchInquiries();
 
     // Trigger Automation Engine
-    triggerAutomationEvent('INQUIRY_CREATED', {
-      inquiryId: newId as number,
-      contactId: Number(newContactId),
-      pipelineStage: newStage
-    });
+    if (created?.id) {
+      triggerAutomationEvent('INQUIRY_CREATED', {
+        inquiryId: created.id,
+        contactId: Number(newContactId),
+        pipelineStage: newStage
+      });
+    }
 
     setShowCreateModal(false);
     setNewContactId('');
@@ -163,11 +169,12 @@ export const InquiriesView: React.FC = () => {
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedInquiry?.id) {
-      await db.inquiries.update(selectedInquiry.id, {
+      await inquiriesService.update(selectedInquiry.id, {
         pipelineStage: editStage,
         followUpDate: editFollowUpDate,
         notes: editNotes.trim()
       });
+      refetchInquiries();
       setSelectedInquiry(null);
     }
   };
@@ -175,8 +182,9 @@ export const InquiriesView: React.FC = () => {
   // Delete Inquiry Handler
   const handleDeleteInquiry = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this admission inquiry record?')) {
-      await db.inquiries.delete(id);
+      await inquiriesService.delete(id);
       setSelectedInquiry(null);
+      refetchInquiries();
     }
   };
 

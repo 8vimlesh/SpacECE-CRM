@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../db/database';
-import { resetDatabase } from '../../db/seed';
+import { useSupabaseData } from '../../hooks/useSupabaseData';
+import { contactsService } from '../../services/contactsService';
+import { inquiriesService } from '../../services/inquiriesService';
+import { messagesService } from '../../services/messagesService';
+import { templatesService } from '../../services/templatesService';
+import { campaignsService } from '../../services/campaignsService';
+import { mediaService } from '../../services/mediaService';
+import { whatsappSettingsService } from '../../services/whatsappSettingsService';
+import { subscriptionService } from '../../services/subscriptionService';
+import { migrateIndexedDbToSupabase } from '../../services/dataMigrationService';
 import { X, RefreshCw, Table as TableIcon, Database, CheckCircle2, Info } from 'lucide-react';
 
 interface DatabaseInspectorModalProps {
@@ -24,39 +31,55 @@ export const DatabaseInspectorModal: React.FC<DatabaseInspectorModalProps> = ({
   onClose
 }) => {
   const [selectedTable, setSelectedTable] = useState<TableName>('contacts');
-  const [isResetting, setIsResetting] = useState(false);
 
-  // Live queries for counts
-  const contactsCount = useLiveQuery(() => db.contacts.count(), [], 0);
-  const inquiriesCount = useLiveQuery(() => db.inquiries.count(), [], 0);
-  const messagesCount = useLiveQuery(() => db.messages.count(), [], 0);
-  const templatesCount = useLiveQuery(() => db.templates.count(), [], 0);
-  const campaignsCount = useLiveQuery(() => db.campaigns.count(), [], 0);
-  const mediaCount = useLiveQuery(() => db.media.count(), [], 0);
-  const settingsCount = useLiveQuery(() => db.whatsAppSettings.count(), [], 0);
-  const subscriptionCount = useLiveQuery(() => db.subscription.count(), [], 0);
+  // Supabase Queries
+  const { data: contacts } = useSupabaseData('contacts', () => contactsService.getAll());
+  const { data: inquiries } = useSupabaseData('inquiries', () => inquiriesService.getAll());
+  const { data: messages } = useSupabaseData('messages', () => messagesService.getAll());
+  const { data: templates } = useSupabaseData('templates', () => templatesService.getAll());
+  const { data: campaigns } = useSupabaseData('campaigns', () => campaignsService.getAll());
+  const { data: media } = useSupabaseData('media', () => mediaService.getAll());
+  const { data: settingsList } = useSupabaseData('whatsapp_settings', async () => {
+    const s = await whatsappSettingsService.get();
+    return s ? [s] : [];
+  });
+  const { data: subList } = useSupabaseData('subscriptions', async () => {
+    const s = await subscriptionService.getSubscription();
+    return s ? [s] : [];
+  });
 
-  // Fetch data for selected table
-  const tableData = useLiveQuery(async () => {
+  const contactsCount = contacts?.length || 0;
+  const inquiriesCount = inquiries?.length || 0;
+  const messagesCount = messages?.length || 0;
+  const templatesCount = templates?.length || 0;
+  const campaignsCount = campaigns?.length || 0;
+  const mediaCount = media?.length || 0;
+  const settingsCount = settingsList?.length || 0;
+  const subscriptionCount = subList?.length || 0;
+
+  const getTableData = () => {
     switch (selectedTable) {
-      case 'contacts': return await db.contacts.toArray();
-      case 'inquiries': return await db.inquiries.toArray();
-      case 'messages': return await db.messages.toArray();
-      case 'templates': return await db.templates.toArray();
-      case 'campaigns': return await db.campaigns.toArray();
-      case 'media': return await db.media.toArray();
-      case 'whatsAppSettings': return await db.whatsAppSettings.toArray();
-      case 'subscription': return await db.subscription.toArray();
+      case 'contacts': return contacts || [];
+      case 'inquiries': return inquiries || [];
+      case 'messages': return messages || [];
+      case 'templates': return templates || [];
+      case 'campaigns': return campaigns || [];
+      case 'media': return media || [];
+      case 'whatsAppSettings': return settingsList || [];
+      case 'subscription': return subList || [];
       default: return [];
     }
-  }, [selectedTable], []);
+  };
+  const tableData = getTableData();
 
   if (!isOpen) return null;
 
+  const [isResetting, setIsResetting] = useState(false);
+
   const handleResetSeed = async () => {
-    if (window.confirm('Are you sure you want to reset and re-seed the IndexedDB database with Spacece India Foundation data?')) {
+    if (window.confirm('Are you sure you want to re-sync and re-seed the Supabase PostgreSQL database?')) {
       setIsResetting(true);
-      await resetDatabase();
+      await migrateIndexedDbToSupabase();
       setIsResetting(false);
     }
   };

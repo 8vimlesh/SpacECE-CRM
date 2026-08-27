@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Template } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { campaignsService } from '../services/campaignsService';
+import { templatesService } from '../services/templatesService';
+import { contactsService } from '../services/contactsService';
+import { whatsappSettingsService } from '../services/whatsappSettingsService';
+import type { Template } from '../db/database';
 import { sendWhatsAppMessage } from '../services/whatsappService';
 import {
   Send,
@@ -20,13 +24,14 @@ import {
 } from 'lucide-react';
 
 export const CampaignsView: React.FC = () => {
-  const campaigns = useLiveQuery(() => db.campaigns.toArray(), [], []);
-  const templates = useLiveQuery(() => db.templates.toArray(), [], []);
-  const contacts = useLiveQuery(() => db.contacts.toArray(), [], []);
-  const settings = useLiveQuery(async () => {
-    const list = await db.whatsAppSettings.toArray();
-    return list[0];
-  }, [], undefined);
+  const { data: campaigns, refetch: refetchCampaigns } = useSupabaseData('campaigns', () => campaignsService.getAll());
+  const { data: templates } = useSupabaseData('templates', () => templatesService.getAll());
+  const { data: contacts } = useSupabaseData('contacts', () => contactsService.getAll());
+  const { data: settingsList } = useSupabaseData('whatsapp_settings', async () => {
+    const s = await whatsappSettingsService.get();
+    return s ? [s] : [];
+  });
+  const settings = settingsList?.[0];
 
   // UI State for Wizard
   const [showWizardModal, setShowWizardModal] = useState(false);
@@ -104,7 +109,7 @@ export const CampaignsView: React.FC = () => {
     const selectedTemplate = templatesMap[selectedTemplateId];
 
     // Create campaign record with status 'SENDING'
-    const newCampaignId = await db.campaigns.add({
+    const newCampaign = await campaignsService.add({
       name: campaignName.trim(),
       templateId: selectedTemplateId,
       audienceType: audienceMode === 'individual' ? `${validRecipients.length} Parents (Individual)` : 'Retargeted Audience',
@@ -112,6 +117,7 @@ export const CampaignsView: React.FC = () => {
       sentCount: 0,
       createdAt: new Date().toISOString()
     });
+    const newCampaignId = newCampaign?.id || 1;
 
     try {
       // Loop through eligible contacts and dispatch messages
@@ -135,17 +141,19 @@ export const CampaignsView: React.FC = () => {
       }
 
       // Update campaign status to COMPLETED
-      await db.campaigns.update(newCampaignId as number, {
+      await campaignsService.update(newCampaignId, {
         status: 'COMPLETED',
         sentCount
       });
+      refetchCampaigns();
 
       setShowWizardModal(false);
     } catch (err: any) {
-      await db.campaigns.update(newCampaignId as number, {
+      await campaignsService.update(newCampaignId, {
         status: 'FAILED',
         sentCount
       });
+      refetchCampaigns();
       setDispatchError(`Campaign Dispatch Error: ${err.message || 'Failed to complete broadcast'}`);
     } finally {
       setIsDispatching(false);

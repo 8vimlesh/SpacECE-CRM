@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Contact } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { contactsService } from '../services/contactsService';
+import { inquiriesService } from '../services/inquiriesService';
+import { messagesService } from '../services/messagesService';
+import type { Contact } from '../db/database';
 import {
   Plus,
   Search,
@@ -30,9 +33,9 @@ interface CsvRowPreview {
 }
 
 export const ContactsView: React.FC = () => {
-  const contacts = useLiveQuery(() => db.contacts.toArray(), [], []);
-  const allInquiries = useLiveQuery(() => db.inquiries.toArray(), [], []);
-  const allMessages = useLiveQuery(() => db.messages.toArray(), [], []);
+  const { data: contacts, refetch: refetchContacts } = useSupabaseData('contacts', () => contactsService.getAll());
+  const { data: allInquiries } = useSupabaseData('inquiries', () => inquiriesService.getAll());
+  const { data: allMessages } = useSupabaseData('messages', () => messagesService.getAll());
 
   // UI State
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,7 +107,7 @@ export const ContactsView: React.FC = () => {
 
     const tagsArray = addTags.split(',').map((t) => t.trim()).filter(Boolean);
 
-    await db.contacts.add({
+    await contactsService.add({
       name: addName.trim(),
       phone: addPhone.trim(),
       linkedStudentClass: addStudentClass.trim() || 'Student Class Pending',
@@ -113,6 +116,7 @@ export const ContactsView: React.FC = () => {
       optedOut: addOptedOut,
       createdAt: new Date().toISOString()
     });
+    refetchContacts();
 
     setShowAddModal(false);
     setAddName('');
@@ -138,13 +142,14 @@ export const ContactsView: React.FC = () => {
     if (selectedContact?.id) {
       const tagsArray = editTags.split(',').map((t) => t.trim()).filter(Boolean);
 
-      await db.contacts.update(selectedContact.id, {
+      await contactsService.update(selectedContact.id, {
         name: editName.trim(),
         phone: editPhone.trim(),
         linkedStudentClass: editStudentClass.trim(),
         tags: tagsArray,
         optedOut: editOptedOut
       });
+      refetchContacts();
 
       setSelectedContact(null);
     }
@@ -153,8 +158,9 @@ export const ContactsView: React.FC = () => {
   // Delete Contact
   const handleDeleteContact = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this contact record?')) {
-      await db.contacts.delete(id);
+      await contactsService.delete(id);
       setSelectedContact(null);
+      refetchContacts();
     }
   };
 
@@ -181,18 +187,20 @@ export const ContactsView: React.FC = () => {
     if (window.confirm(confirmMessage)) {
       if (isFiltered) {
         const idsToDelete = targetContacts.map((c) => c.id!).filter(Boolean);
-        await db.contacts.bulkDelete(idsToDelete);
+        await contactsService.bulkDelete(idsToDelete);
       } else {
-        await db.contacts.clear();
+        await contactsService.clear();
       }
       setSelectedContact(null);
+      refetchContacts();
     }
   };
 
   // Toggle Opt-Out Quick Status
   const handleToggleOptOut = async (contact: Contact) => {
     if (contact.id) {
-      await db.contacts.update(contact.id, { optedOut: !contact.optedOut });
+      await contactsService.update(contact.id, { optedOut: !contact.optedOut });
+      refetchContacts();
     }
   };
 
@@ -300,7 +308,8 @@ export const ContactsView: React.FC = () => {
       createdAt: new Date().toISOString()
     }));
 
-    await db.contacts.bulkAdd(recordsToAdd);
+    await contactsService.bulkAdd(recordsToAdd);
+    refetchContacts();
 
     setImportSummary({
       total: parsedRows.length,

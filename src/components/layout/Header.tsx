@@ -1,6 +1,6 @@
 import React from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../db/database';
+import { useSupabaseData } from '../../hooks/useSupabaseData';
+import { whatsappSettingsService } from '../../services/whatsappSettingsService';
 import { Menu, Search, Database, Bell, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { navItems, type NavItemKey } from './Sidebar';
 
@@ -17,10 +17,11 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const currentNav = navItems.find((item) => item.key === activeTab);
 
-  const settings = useLiveQuery(async () => {
-    const list = await db.whatsAppSettings.toArray();
-    return list[0];
-  }, [], undefined);
+  const { data: settingsList } = useSupabaseData('whatsapp_settings', async () => {
+    const s = await whatsappSettingsService.get();
+    return s ? [s] : [];
+  });
+  const settings = settingsList?.[0];
 
   const isConnected = settings?.connectionStatus === 'CONNECTED';
 

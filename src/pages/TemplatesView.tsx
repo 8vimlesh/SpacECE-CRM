@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Template } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { templatesService } from '../services/templatesService';
+import type { Template } from '../db/database';
 import {
   FileText,
   Plus,
@@ -19,7 +20,7 @@ import {
 type StatusFilter = 'all' | 'APPROVED' | 'PENDING' | 'REJECTED';
 
 export const TemplatesView: React.FC = () => {
-  const templates = useLiveQuery(() => db.templates.toArray(), [], []);
+  const { data: templates, refetch: refetchTemplates } = useSupabaseData('templates', () => templatesService.getAll());
 
   // UI State
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,13 +90,14 @@ export const TemplatesView: React.FC = () => {
       return;
     }
 
-    await db.templates.add({
+    await templatesService.add({
       name: formattedName,
       category: createCategory,
       status: 'PENDING', // Initialized as PENDING Meta Review
       messageBody: createBody.trim(),
       createdAt: new Date().toISOString()
     });
+    refetchTemplates();
 
     setShowCreateModal(false);
     setCreateName('');
@@ -116,12 +118,13 @@ export const TemplatesView: React.FC = () => {
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedTemplate?.id) {
-      await db.templates.update(selectedTemplate.id, {
+      await templatesService.update(selectedTemplate.id, {
         name: editName.trim().toLowerCase().replace(/\s+/g, '_'),
         category: editCategory,
         status: editStatus,
         messageBody: editBody.trim()
       });
+      refetchTemplates();
       setSelectedTemplate(null);
     }
   };
@@ -129,8 +132,9 @@ export const TemplatesView: React.FC = () => {
   // Delete Template Handler
   const handleDeleteTemplate = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this message template?')) {
-      await db.templates.delete(id);
+      await templatesService.delete(id);
       setSelectedTemplate(null);
+      refetchTemplates();
     }
   };
 

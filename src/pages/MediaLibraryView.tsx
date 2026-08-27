@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type MediaItem } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { mediaService } from '../services/mediaService';
+import type { MediaItem } from '../db/database';
 import {
   Upload,
   FileText,
@@ -22,7 +23,7 @@ import {
 type MediaTypeFilter = 'all' | 'image' | 'video' | 'audio' | 'document';
 
 export const MediaLibraryView: React.FC = () => {
-  const mediaItems = useLiveQuery(() => db.media.toArray(), [], []);
+  const { data: mediaItems, refetch: refetchMedia } = useSupabaseData('media', () => mediaService.getAll());
 
   // UI Filter & Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,7 +111,7 @@ export const MediaLibraryView: React.FC = () => {
     setUploadFile(file);
   };
 
-  // Submit Upload to IndexedDB
+  // Submit Upload to Supabase Storage
   const handleConfirmUpload = async () => {
     if (!uploadFile) return;
 
@@ -118,24 +119,12 @@ export const MediaLibraryView: React.FC = () => {
     setUploadError(null);
 
     try {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const dataUrl = event.target?.result as string;
+      await mediaService.uploadFile(uploadFile);
+      refetchMedia();
 
-        await db.media.add({
-          fileName: uploadFile.name,
-          fileType: uploadFile.type || 'application/octet-stream',
-          fileUrl: dataUrl,
-          uploadDate: new Date().toISOString(),
-          size: formatFileSize(uploadFile.size)
-        });
-
-        setIsUploading(false);
-        setShowUploadModal(false);
-        setUploadFile(null);
-      };
-
-      reader.readAsDataURL(uploadFile);
+      setIsUploading(false);
+      setShowUploadModal(false);
+      setUploadFile(null);
     } catch (err: any) {
       setIsUploading(false);
       setUploadError(`Failed to process file: ${err.message || 'Storage error'}`);
@@ -145,10 +134,11 @@ export const MediaLibraryView: React.FC = () => {
   // Delete Asset
   const handleDeleteMedia = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this media asset?')) {
-      await db.media.delete(id);
+      await mediaService.delete(id);
       if (selectedPreviewItem?.id === id) {
         setSelectedPreviewItem(null);
       }
+      refetchMedia();
     }
   };
 

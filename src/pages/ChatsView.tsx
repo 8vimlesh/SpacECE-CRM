@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Contact, type Message } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { contactsService } from '../services/contactsService';
+import { messagesService } from '../services/messagesService';
+import { inquiriesService } from '../services/inquiriesService';
+import { whatsappSettingsService } from '../services/whatsappSettingsService';
+import type { Contact, Message } from '../db/database';
 import {
   sendWhatsAppMessage,
   markConversationAsRead,
@@ -31,13 +35,15 @@ interface ConversationItem {
 }
 
 export const ChatsView: React.FC = () => {
-  // Database queries
-  const contacts = useLiveQuery(() => db.contacts.toArray(), [], []);
-  const allMessages = useLiveQuery(() => db.messages.toArray(), [], []);
-  const settings = useLiveQuery(async () => {
-    const list = await db.whatsAppSettings.toArray();
-    return list[0];
-  }, [], undefined);
+  // Supabase queries
+  const { data: contacts } = useSupabaseData('contacts', () => contactsService.getAll());
+  const { data: allMessages } = useSupabaseData('messages', () => messagesService.getAll());
+  const { data: inquiries } = useSupabaseData('inquiries', () => inquiriesService.getAll());
+  const { data: settingsList } = useSupabaseData('whatsapp_settings', async () => {
+    const s = await whatsappSettingsService.get();
+    return s ? [s] : [];
+  });
+  const settings = settingsList?.[0];
 
   // UI State
   const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
@@ -125,11 +131,7 @@ export const ChatsView: React.FC = () => {
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
   // Linked Inquiry info for active contact
-  const linkedInquiry = useLiveQuery(async () => {
-    if (!selectedContactId) return null;
-    const list = await db.inquiries.where('contactId').equals(selectedContactId).toArray();
-    return list[0] || null;
-  }, [selectedContactId], null);
+  const linkedInquiry = (inquiries || []).find((i) => i.contactId === selectedContactId) || null;
 
   // Send Outgoing WhatsApp Message Handler
   const handleSendMessage = async (e: React.FormEvent) => {

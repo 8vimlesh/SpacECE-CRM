@@ -2,7 +2,6 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Sidebar, type NavItemKey } from './Sidebar';
 import { Header } from './Header';
 import { DatabaseInspectorModal } from '../common/DatabaseInspectorModal';
-import { seedDatabase } from '../../db/seed';
 
 const DashboardView = lazy(() => import('../../pages/DashboardView').then((m) => ({ default: m.DashboardView })));
 const ChatsView = lazy(() => import('../../pages/ChatsView').then((m) => ({ default: m.ChatsView })));
@@ -16,15 +15,17 @@ const SubscriptionView = lazy(() => import('../../pages/SubscriptionView').then(
 const SettingsView = lazy(() => import('../../pages/SettingsView').then((m) => ({ default: m.SettingsView })));
 const AutomationView = lazy(() => import('../../pages/AutomationView').then((m) => ({ default: m.AutomationView })));
 
+import { migrateIndexedDbToSupabase } from '../../services/dataMigrationService';
+
 export const MainLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavItemKey>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDbInspectorOpen, setIsDbInspectorOpen] = useState(false);
 
-  // Initialize DB seed on initial render
+  // Initialize & Migrate DB to Supabase on initial render
   useEffect(() => {
-    seedDatabase().catch((err) => {
-      console.error('Failed to seed database:', err);
+    migrateIndexedDbToSupabase().catch((err) => {
+      console.error('Failed to initialize Supabase database:', err);
     });
   }, []);
 

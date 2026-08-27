@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type WhatsAppSettings } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { whatsappSettingsService } from '../services/whatsappSettingsService';
+import type { WhatsAppSettings } from '../db/database';
 import {
   ShieldAlert,
   Save,
@@ -15,10 +16,11 @@ import {
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
-  const settings = useLiveQuery(async () => {
-    const list = await db.whatsAppSettings.toArray();
-    return list[0];
-  }, [], undefined);
+  const { data: settingsList, refetch: refetchSettings } = useSupabaseData('whatsapp_settings', async () => {
+    const s = await whatsappSettingsService.get();
+    return s ? [s] : [];
+  });
+  const settings = settingsList?.[0];
 
   // Form state
   const [displayName, setDisplayName] = useState('');
@@ -114,11 +116,8 @@ export const SettingsView: React.FC = () => {
           lastChecked: new Date().toLocaleString()
         };
 
-        if (settings?.id) {
-          await db.whatsAppSettings.update(settings.id, updatedRecord);
-        } else {
-          await db.whatsAppSettings.add(updatedRecord as WhatsAppSettings);
-        }
+        await whatsappSettingsService.save(updatedRecord);
+        refetchSettings();
 
         setSuccessMessage(`WhatsApp Business Account Verified! Meta ID: ${data.id}. Status set to Connected.`);
       } else {
@@ -136,11 +135,8 @@ export const SettingsView: React.FC = () => {
           lastChecked: new Date().toLocaleString()
         };
 
-        if (settings?.id) {
-          await db.whatsAppSettings.update(settings.id, updatedRecord);
-        } else {
-          await db.whatsAppSettings.add(updatedRecord as WhatsAppSettings);
-        }
+        await whatsappSettingsService.save(updatedRecord);
+        refetchSettings();
 
         setApiError(`Connection Failed: ${errorMsg}`);
       }
@@ -156,9 +152,8 @@ export const SettingsView: React.FC = () => {
         lastChecked: new Date().toLocaleString()
       };
 
-      if (settings?.id) {
-        await db.whatsAppSettings.update(settings.id, updatedRecord);
-      }
+      await whatsappSettingsService.save(updatedRecord);
+      refetchSettings();
 
       setApiError(`Connection Failed: Could not reach Meta Graph API (${err.message || 'Network Error'}). Please verify Internet connection and credentials.`);
     } finally {
@@ -169,14 +164,13 @@ export const SettingsView: React.FC = () => {
   // Disconnect Handler
   const handleDisconnect = async () => {
     if (window.confirm('Are you sure you want to disconnect WhatsApp Business API? Features requiring live API connection will be disabled.')) {
-      if (settings?.id) {
-        await db.whatsAppSettings.update(settings.id, {
-          connectionStatus: 'DISCONNECTED',
-          lastChecked: new Date().toLocaleString()
-        });
-        setSuccessMessage('WhatsApp Business Account has been disconnected.');
-        setApiError(null);
-      }
+      await whatsappSettingsService.save({
+        connectionStatus: 'DISCONNECTED',
+        lastChecked: new Date().toLocaleString()
+      });
+      refetchSettings();
+      setSuccessMessage('WhatsApp Business Account has been disconnected.');
+      setApiError(null);
     }
   };
 

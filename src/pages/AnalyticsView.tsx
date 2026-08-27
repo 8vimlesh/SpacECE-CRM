@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/database';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { contactsService } from '../services/contactsService';
+import { messagesService } from '../services/messagesService';
+import { campaignsService } from '../services/campaignsService';
+import { whatsappSettingsService } from '../services/whatsappSettingsService';
 import {
   Download,
   Send,
@@ -19,14 +22,16 @@ interface DayStat {
 }
 
 export const AnalyticsView: React.FC = () => {
-  // Live IndexedDB Queries
-  const contactsCount = useLiveQuery(() => db.contacts.count(), [], 0);
-  const allMessages = useLiveQuery(() => db.messages.toArray(), [], []);
-  const allCampaigns = useLiveQuery(() => db.campaigns.toArray(), [], []);
-  const settings = useLiveQuery(async () => {
-    const list = await db.whatsAppSettings.toArray();
-    return list[0];
-  }, [], undefined);
+  // Supabase Queries
+  const { data: contacts } = useSupabaseData('contacts', () => contactsService.getAll());
+  const { data: allMessages } = useSupabaseData('messages', () => messagesService.getAll());
+  const { data: allCampaigns } = useSupabaseData('campaigns', () => campaignsService.getAll());
+  const { data: settingsList } = useSupabaseData('whatsapp_settings', async () => {
+    const s = await whatsappSettingsService.get();
+    return s ? [s] : [];
+  });
+  const settings = settingsList?.[0];
+  const contactsCount = contacts?.length || 0;
 
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
