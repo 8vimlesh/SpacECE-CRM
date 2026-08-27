@@ -158,6 +158,37 @@ export const ContactsView: React.FC = () => {
     }
   };
 
+  // Delete All / Bulk Delete Contacts
+  const handleDeleteAllContacts = async () => {
+    if (!contacts || contacts.length === 0) {
+      alert('No contacts available to delete.');
+      return;
+    }
+
+    const isFiltered = searchQuery.trim().length > 0;
+    const targetContacts = isFiltered ? filteredContacts : contacts;
+    const targetCount = targetContacts.length;
+
+    if (targetCount === 0) {
+      alert('No matching contacts found to delete.');
+      return;
+    }
+
+    const confirmMessage = isFiltered
+      ? `⚠️ WARNING: Are you sure you want to delete ${targetCount} matching contact(s) for search "${searchQuery}"?\n\nThis action cannot be undone.`
+      : `⚠️ WARNING: Are you sure you want to delete ALL ${targetCount} contact(s)?\n\nThis action cannot be undone.`;
+
+    if (window.confirm(confirmMessage)) {
+      if (isFiltered) {
+        const idsToDelete = targetContacts.map((c) => c.id!).filter(Boolean);
+        await db.contacts.bulkDelete(idsToDelete);
+      } else {
+        await db.contacts.clear();
+      }
+      setSelectedContact(null);
+    }
+  };
+
   // Toggle Opt-Out Quick Status
   const handleToggleOptOut = async (contact: Contact) => {
     if (contact.id) {
@@ -292,6 +323,20 @@ export const ContactsView: React.FC = () => {
           </p>
         </div>
         <div className="page-actions">
+          {contacts && contacts.length > 0 && (
+            <button
+              className="btn btn-danger"
+              onClick={handleDeleteAllContacts}
+              title={searchQuery ? `Delete ${filteredContacts.length} matching contact(s)` : 'Delete all contacts from database'}
+            >
+              <Trash2 size={16} />
+              <span>
+                {searchQuery
+                  ? `Delete Filtered (${filteredContacts.length})`
+                  : `Delete All (${contacts.length})`}
+              </span>
+            </button>
+          )}
           <button className="btn btn-outline" onClick={() => setShowCsvModal(true)}>
             <Upload size={16} />
             <span>Import CSV</span>
