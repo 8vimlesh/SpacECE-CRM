@@ -139,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <style>{`
         .sidebar {
           width: var(--sidebar-width);
-          background-color: var(--navy-900);
+          background-color: #121318;
           color: #ffffff;
           height: 100vh;
           position: fixed;
@@ -167,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           align-items: center;
           gap: 0.875rem;
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          background-color: rgba(0, 0, 0, 0.15);
+          background-color: rgba(0, 0, 0, 0.25);
         }
 
         .brand-logo {
@@ -179,7 +179,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           align-items: center;
           justify-content: center;
           padding: 2px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+          box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
           flex-shrink: 0;
           overflow: hidden;
         }
@@ -209,8 +209,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         .brand-subtitle {
           font-size: 0.75rem;
-          color: var(--primary-100);
-          opacity: 0.85;
+          color: #fbbf24;
+          font-weight: 600;
+          opacity: 0.95;
           display: block;
         }
 
@@ -242,7 +243,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .nav-group-label {
           font-size: 0.6875rem;
           font-weight: 800;
-          color: var(--slate-400);
+          color: #94a3b8;
           letter-spacing: 0.08em;
           padding: 0.5rem 0.75rem 0.25rem 0.75rem;
         }
@@ -253,7 +254,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           gap: 0.875rem;
           padding: 0.75rem 0.875rem;
           border-radius: var(--radius-md);
-          color: var(--slate-300);
+          color: #cbd5e1;
           background: transparent;
           border: none;
           width: 100%;
@@ -265,25 +266,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         .nav-item:hover {
           color: #ffffff;
-          background-color: rgba(255, 255, 255, 0.07);
+          background-color: rgba(255, 255, 255, 0.08);
         }
 
         .nav-item.active {
           color: #ffffff;
-          background: linear-gradient(90deg, rgba(13, 148, 136, 0.25) 0%, rgba(13, 148, 136, 0.08) 100%);
-          border-left: 3px solid var(--primary-500);
+          background: linear-gradient(90deg, rgba(245, 158, 11, 0.26) 0%, rgba(245, 158, 11, 0.06) 100%);
+          border-left: 3px solid #f59e0b;
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .nav-icon {
-          color: var(--slate-400);
+          color: #94a3b8;
           transition: color 0.2s ease;
           flex-shrink: 0;
         }
 
         .nav-item:hover .nav-icon,
         .nav-item.active .nav-icon {
-          color: var(--primary-500);
+          color: #f59e0b;
         }
 
         .nav-label {
@@ -303,13 +304,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
 
         .nav-badge.info { background-color: rgba(59, 130, 246, 0.2); color: #93c5fd; }
-        .nav-badge.warning { background-color: rgba(245, 158, 11, 0.2); color: #fcd34d; }
-        .nav-badge.primary { background-color: rgba(13, 148, 136, 0.25); color: #5eead4; }
+        .nav-badge.warning { background-color: rgba(245, 158, 11, 0.25); color: #fcd34d; }
+        .nav-badge.primary { background-color: rgba(245, 158, 11, 0.25); color: #fbbf24; }
 
         .sidebar-footer {
           padding: 1rem;
           border-top: 1px solid rgba(255, 255, 255, 0.08);
-          background-color: rgba(0, 0, 0, 0.2);
+          background-color: rgba(0, 0, 0, 0.25);
           display: flex;
           flex-direction: column;
           gap: 0.75rem;
@@ -325,15 +326,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           background-color: rgba(255, 255, 255, 0.06);
           border: 1px dashed rgba(255, 255, 255, 0.2);
           border-radius: var(--radius-md);
-          color: var(--slate-300);
+          color: #cbd5e1;
           font-size: 0.75rem;
           font-weight: 600;
           transition: all 0.2s ease;
         }
 
         .db-inspector-trigger:hover {
-          background-color: rgba(13, 148, 136, 0.2);
-          border-color: var(--primary-500);
+          background-color: rgba(245, 158, 11, 0.2);
+          border-color: #f59e0b;
           color: #ffffff;
         }
 
@@ -342,7 +343,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           align-items: center;
           gap: 0.5rem;
           font-size: 0.75rem;
-          color: var(--slate-400);
+          color: #94a3b8;
           padding: 0 0.25rem;
         }
 
