@@ -3,7 +3,7 @@
 **Built for**: Spacece India Foundation  
 **Tech Stack**: React 18, Vite, TypeScript, Pure Custom CSS, Lucide Icons, Supabase (PostgreSQL), Meta Cloud API v18.0, n8n Webhooks  
 **Build Status**: 100% Completed & Verified (`npm run build` passed with 0 errors)  
-**Live Application URL**: `http://localhost:5173/`
+**Live Application URL**: `https://spacececrm.vercel.app/`
 
 ---
 
