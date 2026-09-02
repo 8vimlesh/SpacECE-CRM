@@ -176,7 +176,7 @@ export const ChatsView: React.FC = () => {
         setMessageInput('');
         setSendFeedback({
           type: 'success',
-          msg: 'Message dispatched silently in background to recipient WhatsApp!'
+          msg: 'Message dispatched successfully via Meta WhatsApp Cloud API!'
         });
       } else {
         setSendFeedback({
@@ -417,16 +417,6 @@ export const ChatsView: React.FC = () => {
                 <div className={`composer-feedback-alert ${sendFeedback.type}`}>
                   {sendFeedback.type === 'success' ? <CheckCheck size={16} /> : <AlertCircle size={16} />}
                   <span>{sendFeedback.msg}</span>
-                  {sendFeedback.waLink && (
-                    <a
-                      href={sendFeedback.waLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ marginLeft: '10px', textDecoration: 'underline', fontWeight: 600, color: 'inherit' }}
-                    >
-                      Open & Send via WhatsApp Web (wa.me) ↗
-                    </a>
-                  )}
                 </div>
               )}
 
