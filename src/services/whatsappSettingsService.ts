@@ -21,7 +21,6 @@ function getEnvSettings(): Partial<WhatsAppSettings> {
 function resolveConnectionStatus(
   settings: WhatsAppSettings
 ): WhatsAppSettings['connectionStatus'] {
-  // If explicitly connected and has required Meta credentials
   if (settings.accessToken && settings.phoneNumberId) {
     return 'CONNECTED';
   }
@@ -30,18 +29,17 @@ function resolveConnectionStatus(
 
 export const whatsappSettingsService = {
   async get(): Promise<WhatsAppSettings | null> {
-<<<<<<< HEAD
     const envOverrides = getEnvSettings();
-    let currentSettings: WhatsAppSettings | null = null;
-=======
     let localRecord: WhatsAppSettings | null = null;
+
     try {
       const localList = await db.whatsAppSettings.toArray();
       localRecord = localList[0] || null;
     } catch (e) {
-      console.warn('Dexie read error in whatsappSettingsService:', e);
+      console.warn('Dexie read warning in whatsappSettingsService:', e);
     }
->>>>>>> 59408db915c8f4dc6bfb56a9ef3357e2c80f2be7
+
+    let currentSettings: WhatsAppSettings | null = null;
 
     try {
       const { data, error } = await supabase
@@ -51,54 +49,30 @@ export const whatsappSettingsService = {
 
       if (!error && data && data.length > 0) {
         const row = data[0];
-<<<<<<< HEAD
         currentSettings = {
           id: row.id,
-          displayName: row.display_name || 'Spacece India Foundation',
-          phoneNumber: row.phone_number || '',
-          phoneNumberId: row.phone_number_id || '',
-          wabaId: row.waba_id || '',
-          accessToken: row.access_token || '',
-          connectionStatus: (row.connection_status as WhatsAppSettings['connectionStatus']) || 'DISCONNECTED',
-          lastChecked: row.last_checked,
-          webhookUrl: row.webhook_url,
-          webhookSecret: row.webhook_secret,
-          gatewayProvider: 'META_CLOUD',
-          personalPhoneAlerts: row.personal_phone_alerts || '',
-          autoOpenWebWhatsApp: false
-=======
-        return {
-          id: localRecord?.id || row.id,
-          displayName: row.display_name ?? localRecord?.displayName ?? 'Spacece India Foundation',
-          phoneNumber: row.phone_number ?? localRecord?.phoneNumber ?? '',
-          phoneNumberId: row.phone_number_id ?? localRecord?.phoneNumberId ?? '',
-          wabaId: row.waba_id ?? localRecord?.wabaId ?? '',
-          accessToken: row.access_token ?? localRecord?.accessToken ?? '',
-          connectionStatus: (row.connection_status as WhatsAppSettings['connectionStatus']) || localRecord?.connectionStatus || 'CONNECTED',
+          displayName: row.display_name || localRecord?.displayName || 'Spacece India Foundation',
+          phoneNumber: row.phone_number || localRecord?.phoneNumber || '',
+          phoneNumberId: row.phone_number_id || localRecord?.phoneNumberId || '',
+          wabaId: row.waba_id || localRecord?.wabaId || '',
+          accessToken: row.access_token || localRecord?.accessToken || '',
+          connectionStatus: (row.connection_status as WhatsAppSettings['connectionStatus']) || localRecord?.connectionStatus || 'DISCONNECTED',
           lastChecked: row.last_checked || localRecord?.lastChecked,
           webhookUrl: row.webhook_url || localRecord?.webhookUrl,
           webhookSecret: row.webhook_secret || localRecord?.webhookSecret,
-          gatewayProvider: row.gateway_provider || localRecord?.gatewayProvider || 'EASY_GATEWAY',
-          easyGatewayUrl: row.easy_gateway_url || localRecord?.easyGatewayUrl || 'https://api.callmebot.com/whatsapp.php',
-          easyApiKey: row.easy_api_key || localRecord?.easyApiKey || '',
+          gatewayProvider: 'META_CLOUD',
           personalPhoneAlerts: row.personal_phone_alerts || localRecord?.personalPhoneAlerts || '',
-          autoOpenWebWhatsApp: row.auto_open_web_whatsapp ?? localRecord?.autoOpenWebWhatsApp ?? true
->>>>>>> 59408db915c8f4dc6bfb56a9ef3357e2c80f2be7
+          autoOpenWebWhatsApp: false
         };
       }
     } catch (e) {
       console.warn('Supabase whatsapp_settings fetch warning, using local DB:', e);
     }
-<<<<<<< HEAD
 
-    if (!currentSettings) {
-      const localList = await db.whatsAppSettings.toArray();
-      if (localList[0]) {
-        currentSettings = localList[0];
-      }
+    if (!currentSettings && localRecord) {
+      currentSettings = localRecord;
     }
 
-    // If still no settings record exists, create default base
     if (!currentSettings) {
       currentSettings = {
         displayName: 'Spacece India Foundation',
@@ -113,7 +87,7 @@ export const whatsappSettingsService = {
       };
     }
 
-    // Merge .env settings where fields are unset in DB
+    // Merge .env settings where values are present
     const merged: WhatsAppSettings = {
       ...currentSettings,
       accessToken: currentSettings.accessToken || envOverrides.accessToken || '',
@@ -128,58 +102,31 @@ export const whatsappSettingsService = {
   },
 
   async save(settings: Partial<WhatsAppSettings>): Promise<boolean> {
-    const localList = await db.whatsAppSettings.toArray();
     const updatedSettings: Partial<WhatsAppSettings> = {
       ...settings,
       gatewayProvider: 'META_CLOUD'
     };
 
-    if (localList[0]?.id) {
-      await db.whatsAppSettings.update(localList[0].id, updatedSettings);
-    } else {
-      await db.whatsAppSettings.add({
-        displayName: 'Spacece India Foundation',
-        phoneNumber: '',
-        phoneNumberId: '',
-        wabaId: '',
-        accessToken: '',
-        connectionStatus: 'DISCONNECTED',
-        gatewayProvider: 'META_CLOUD',
-        personalPhoneAlerts: '',
-        autoOpenWebWhatsApp: false,
-        ...updatedSettings
-      } as WhatsAppSettings);
-=======
-    return localRecord;
-  },
-
-  async save(settings: Partial<WhatsAppSettings>): Promise<boolean> {
-    let currentId: number | undefined;
     try {
       const localList = await db.whatsAppSettings.toArray();
       if (localList[0]?.id) {
-        currentId = localList[0].id;
-        await db.whatsAppSettings.update(currentId, settings);
+        await db.whatsAppSettings.update(localList[0].id, updatedSettings);
       } else {
-        const newId = await db.whatsAppSettings.add({
+        await db.whatsAppSettings.add({
           displayName: 'Spacece India Foundation',
           phoneNumber: '',
           phoneNumberId: '',
           wabaId: '',
           accessToken: '',
-          connectionStatus: 'CONNECTED',
-          gatewayProvider: 'EASY_GATEWAY',
-          easyGatewayUrl: 'https://api.callmebot.com/whatsapp.php',
-          easyApiKey: '',
+          connectionStatus: 'DISCONNECTED',
+          gatewayProvider: 'META_CLOUD',
           personalPhoneAlerts: '',
-          autoOpenWebWhatsApp: true,
-          ...settings
+          autoOpenWebWhatsApp: false,
+          ...updatedSettings
         } as WhatsAppSettings);
-        currentId = Number(newId);
       }
     } catch (e) {
       console.warn('Local DB save error in whatsappSettingsService:', e);
->>>>>>> 59408db915c8f4dc6bfb56a9ef3357e2c80f2be7
     }
 
     try {
@@ -198,7 +145,6 @@ export const whatsappSettingsService = {
         updated_at: new Date().toISOString()
       };
 
-      // Clean undefined fields from fullPayload
       Object.keys(fullPayload).forEach((key) => fullPayload[key] === undefined && delete fullPayload[key]);
 
       const existingSupabase = await supabase.from('whatsapp_settings').select('id').limit(1);
@@ -211,7 +157,6 @@ export const whatsappSettingsService = {
         res = await supabase.from('whatsapp_settings').insert([fullPayload]);
       }
 
-      // If full payload fails due to missing custom columns on Supabase schema, try base payload fallback
       if (res?.error) {
         const basePayload: any = {
           display_name: settings.displayName,
@@ -236,6 +181,7 @@ export const whatsappSettingsService = {
     } catch (e) {
       console.warn('Supabase whatsapp_settings save skipped/failed:', e);
     }
+
     return true;
   }
 };
