@@ -1,19 +1,18 @@
 import React from 'react';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import { whatsappSettingsService } from '../../services/whatsappSettingsService';
-import { Menu, Search, Database, Bell, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Menu, Search, Bell, CheckCircle2 } from 'lucide-react';
 import { navItems, type NavItemKey } from './Sidebar';
 
 interface HeaderProps {
   activeTab: NavItemKey;
   onOpenMobileSidebar: () => void;
-  onOpenDbInspector: () => void;
+  onOpenDbInspector?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
-  onOpenMobileSidebar,
-  onOpenDbInspector
+  onOpenMobileSidebar
 }) => {
   const currentNav = navItems.find((item) => item.key === activeTab);
 
@@ -55,26 +54,11 @@ export const Header: React.FC<HeaderProps> = ({
           />
         </div>
 
-        {/* DB Inspector Action */}
-        <button
-          className="header-action-btn db-btn"
-          onClick={onOpenDbInspector}
-          title="Open Database Inspector"
-        >
-          <Database size={18} />
-          <span className="db-btn-label">IndexedDB</span>
-        </button>
-
-        {/* Dynamic WhatsApp Connection Badge */}
-        {isConnected ? (
+        {/* Dynamic WhatsApp Connection Badge (shown only when verified) */}
+        {isConnected && (
           <div className="connection-badge success" title="WhatsApp Business API Verified & Active">
             <CheckCircle2 size={15} />
             <span>API Connected</span>
-          </div>
-        ) : (
-          <div className="connection-badge warning" title="WhatsApp Business API is not connected">
-            <ShieldAlert size={15} />
-            <span>API Disconnected</span>
           </div>
         )}
 

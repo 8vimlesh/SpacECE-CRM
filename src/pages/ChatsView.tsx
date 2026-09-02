@@ -356,9 +356,11 @@ export const ChatsView: React.FC = () => {
                 </div>
 
                 <div className="thread-header-right">
-                  <span className={`badge ${isApiConnected ? 'badge-success' : 'badge-warning'}`}>
-                    {isApiConnected ? 'Meta API Connected' : 'API Disconnected'}
-                  </span>
+                  {isApiConnected && (
+                    <span className="badge badge-success">
+                      Meta API Connected
+                    </span>
+                  )}
 
                   <button
                     className="sidepanel-toggle-btn"

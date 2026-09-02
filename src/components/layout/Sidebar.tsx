@@ -54,7 +54,7 @@ export const navItems: NavItemConfig[] = [
   { key: 'media', label: 'Media Library', icon: Folder },
   { key: 'analytics', label: 'Analytics & Reports', icon: BarChart3 },
   { key: 'subscription', label: 'Subscription / Usage', icon: CreditCard },
-  { key: 'settings', label: 'Settings', icon: Settings, badge: 'Pending API', badgeType: 'warning' },
+  { key: 'settings', label: 'Settings', icon: Settings },
   { key: 'automation', label: 'Automation', icon: Zap }
 ];
 

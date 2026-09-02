@@ -5,38 +5,29 @@ import { inquiriesService } from '../services/inquiriesService';
 import { messagesService } from '../services/messagesService';
 import { campaignsService } from '../services/campaignsService';
 import { templatesService } from '../services/templatesService';
-import { whatsappSettingsService } from '../services/whatsappSettingsService';
 import type { NavItemKey } from '../components/layout/Sidebar';
 import {
   Users,
   GitPullRequest,
   MessageSquare,
   Send,
-  ShieldAlert,
   ArrowRight,
   Plus
 } from 'lucide-react';
 
 interface DashboardViewProps {
   onNavigate: (key: NavItemKey) => void;
-  onOpenDbInspector: () => void;
+  onOpenDbInspector?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
-  onNavigate,
-  onOpenDbInspector
+  onNavigate
 }) => {
   const { data: contacts } = useSupabaseData('contacts', () => contactsService.getAll());
   const { data: inquiries } = useSupabaseData('inquiries', () => inquiriesService.getAll());
   const { data: messages } = useSupabaseData('messages', () => messagesService.getAll());
   const { data: campaigns } = useSupabaseData('campaigns', () => campaignsService.getAll());
   const { data: templates } = useSupabaseData('templates', () => templatesService.getAll());
-  const { data: settingsList } = useSupabaseData('whatsapp_settings', async () => {
-    const s = await whatsappSettingsService.get();
-    return s ? [s] : [];
-  });
-  const settings = settingsList?.[0];
-  const isConnected = settings?.connectionStatus === 'CONNECTED' && Boolean(settings?.accessToken && settings?.phoneNumberId);
 
   const contactsCount = contacts?.length || 0;
   const inquiriesCount = inquiries?.length || 0;
@@ -63,9 +54,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         <div className="page-actions">
-          <button className="btn btn-outline" onClick={onOpenDbInspector}>
-            Inspect Database (IndexedDB)
-          </button>
           <button className="btn btn-primary" onClick={() => onNavigate('contacts')}>
             <Plus size={16} />
             <span>Add Contact</span>
@@ -73,23 +61,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Connection Notice Banner */}
-      {!isConnected && (
-        <div className="system-notice-card">
-          <div className="notice-icon-bg">
-            <ShieldAlert size={24} className="text-amber" />
-          </div>
-          <div className="notice-content">
-            <h4>WhatsApp API Integration Pending Setup</h4>
-            <p>
-              The database structure and navigation foundation are ready. To initiate automated WhatsApp messages and live chats, configure your WhatsApp Business API credentials in <strong>Settings</strong>.
-            </p>
-          </div>
-          <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('settings')}>
-            Configure Settings
-          </button>
-        </div>
-      )}
 
       {/* Stat Cards Row */}
       <div className="grid-4 mb-6">
@@ -190,8 +161,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="check-item">
               <div className="check-bullet active">✓</div>
               <div>
-                <strong>IndexedDB Relational Database</strong>
-                <p>8 relational schemas initialized with foreign key references and seed dataset</p>
+                <strong>Supabase PostgreSQL Database</strong>
+                <p>11 relational tables configured with foreign keys, indexes, and real-time sync</p>
               </div>
             </div>
 
