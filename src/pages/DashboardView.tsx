@@ -5,6 +5,7 @@ import { inquiriesService } from '../services/inquiriesService';
 import { messagesService } from '../services/messagesService';
 import { campaignsService } from '../services/campaignsService';
 import { templatesService } from '../services/templatesService';
+import { whatsappSettingsService } from '../services/whatsappSettingsService';
 import type { NavItemKey } from '../components/layout/Sidebar';
 import {
   Users,
@@ -30,6 +31,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const { data: messages } = useSupabaseData('messages', () => messagesService.getAll());
   const { data: campaigns } = useSupabaseData('campaigns', () => campaignsService.getAll());
   const { data: templates } = useSupabaseData('templates', () => templatesService.getAll());
+  const { data: settingsList } = useSupabaseData('whatsapp_settings', async () => {
+    const s = await whatsappSettingsService.get();
+    return s ? [s] : [];
+  });
+  const settings = settingsList?.[0];
+  const isConnected = settings?.connectionStatus === 'CONNECTED' && Boolean(settings?.accessToken && settings?.phoneNumberId);
 
   const contactsCount = contacts?.length || 0;
   const inquiriesCount = inquiries?.length || 0;
@@ -67,20 +74,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Connection Notice Banner */}
-      <div className="system-notice-card">
-        <div className="notice-icon-bg">
-          <ShieldAlert size={24} className="text-amber" />
+      {!isConnected && (
+        <div className="system-notice-card">
+          <div className="notice-icon-bg">
+            <ShieldAlert size={24} className="text-amber" />
+          </div>
+          <div className="notice-content">
+            <h4>WhatsApp API Integration Pending Setup</h4>
+            <p>
+              The database structure and navigation foundation are ready. To initiate automated WhatsApp messages and live chats, configure your WhatsApp Business API credentials in <strong>Settings</strong>.
+            </p>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('settings')}>
+            Configure Settings
+          </button>
         </div>
-        <div className="notice-content">
-          <h4>WhatsApp API Integration Pending Setup</h4>
-          <p>
-            The database structure and navigation foundation are ready. To initiate automated WhatsApp messages and live chats, configure your WhatsApp Business API credentials in <strong>Settings</strong>.
-          </p>
-        </div>
-        <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('settings')}>
-          Configure Settings
-        </button>
-      </div>
+      )}
 
       {/* Stat Cards Row */}
       <div className="grid-4 mb-6">
