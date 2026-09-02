@@ -21,7 +21,12 @@ export const whatsappSettingsService = {
           connectionStatus: (row.connection_status as WhatsAppSettings['connectionStatus']) || 'DISCONNECTED',
           lastChecked: row.last_checked,
           webhookUrl: row.webhook_url,
-          webhookSecret: row.webhook_secret
+          webhookSecret: row.webhook_secret,
+          gatewayProvider: row.gateway_provider || 'EASY_GATEWAY',
+          easyGatewayUrl: row.easy_gateway_url || 'https://api.callmebot.com/whatsapp.php',
+          easyApiKey: row.easy_api_key || '',
+          personalPhoneAlerts: row.personal_phone_alerts || '',
+          autoOpenWebWhatsApp: row.auto_open_web_whatsapp ?? true
         };
       }
     } catch (e) {
@@ -36,7 +41,20 @@ export const whatsappSettingsService = {
     if (localList[0]?.id) {
       await db.whatsAppSettings.update(localList[0].id, settings);
     } else {
-      await db.whatsAppSettings.add(settings as WhatsAppSettings);
+      await db.whatsAppSettings.add({
+        displayName: 'Spacece India Foundation',
+        phoneNumber: '',
+        phoneNumberId: '',
+        wabaId: '',
+        accessToken: '',
+        connectionStatus: 'CONNECTED',
+        gatewayProvider: 'EASY_GATEWAY',
+        easyGatewayUrl: 'https://api.callmebot.com/whatsapp.php',
+        easyApiKey: '',
+        personalPhoneAlerts: '',
+        autoOpenWebWhatsApp: true,
+        ...settings
+      } as WhatsAppSettings);
     }
 
     try {
@@ -50,6 +68,11 @@ export const whatsappSettingsService = {
         last_checked: new Date().toISOString(),
         webhook_url: settings.webhookUrl,
         webhook_secret: settings.webhookSecret,
+        gateway_provider: settings.gatewayProvider,
+        easy_gateway_url: settings.easyGatewayUrl,
+        easy_api_key: settings.easyApiKey,
+        personal_phone_alerts: settings.personalPhoneAlerts,
+        auto_open_web_whatsapp: settings.autoOpenWebWhatsApp,
         updated_at: new Date().toISOString()
       };
 

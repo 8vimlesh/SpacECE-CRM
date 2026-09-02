@@ -4,7 +4,7 @@ import { contactsService } from './contactsService';
 import { inquiriesService } from './inquiriesService';
 import { templatesService } from './templatesService';
 import { whatsappSettingsService } from './whatsappSettingsService';
-import { sendWhatsAppMessage } from './whatsappService';
+import { sendWhatsAppMessage, sendPersonalWhatsAppAlert } from './whatsappService';
 
 // Idempotency cache map (key -> timestamp)
 const recentExecutionsCache = new Map<string, number>();
@@ -224,6 +224,18 @@ async function processAutomationRule(
         const targetUrl = action.params.webhookUrl || settings?.webhookUrl || 'https://n8n.spacece.org/webhook/whatsapp-events';
         
         executedActionsSummary.push(`Dispatched Webhook Payload to ${targetUrl}`);
+      }
+    }
+
+    // 5b. Optional Alert to Personal WhatsApp numbers
+    const settings = await whatsappSettingsService.get();
+    if (settings?.personalPhoneAlerts && settings.personalPhoneAlerts.trim()) {
+      try {
+        const alertBody = `🤖 *CRM Automation Fired*\n\n📌 *Rule:* ${ruleName}\n⚡ *Event:* ${triggerType}\n👤 *Target:* ${recipientStr}\n✅ *Actions:* ${executedActionsSummary.join('; ')}`;
+        await sendPersonalWhatsAppAlert(alertBody);
+        executedActionsSummary.push('Alert sent to Personal WhatsApp');
+      } catch (alertErr) {
+        console.warn('Personal WhatsApp alert dispatch error:', alertErr);
       }
     }
 

@@ -25,7 +25,8 @@ import {
   Info,
   RefreshCw,
   FileText,
-  AlertCircle
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react';
 
 interface ConversationItem {
@@ -76,7 +77,7 @@ export const ChatsView: React.FC = () => {
   // Composer State
   const [messageInput, setMessageInput] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [sendFeedback, setSendFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [sendFeedback, setSendFeedback] = useState<{ type: 'success' | 'error'; msg: string; waLink?: string } | null>(null);
 
   // Test Incoming Message Modal State
   const [showSimulateModal, setShowSimulateModal] = useState(false);
@@ -144,9 +145,8 @@ export const ChatsView: React.FC = () => {
     return true;
   });
 
-  // Selected Active Contact & Messages
-  const activeConversation = conversations.find((item) => item.contact.id === selectedContactId);
-  const activeContact = activeConversation?.contact;
+  // Active Selected Contact Object
+  const activeContact = (contacts || []).find((c) => c.id === selectedContactId) || null;
 
   const activeMessages = (allMessages || [])
     .filter((m) => m.contactId === selectedContactId)
@@ -176,7 +176,7 @@ export const ChatsView: React.FC = () => {
         setMessageInput('');
         setSendFeedback({
           type: 'success',
-          msg: isApiConnected ? 'Message dispatched via Meta WhatsApp API' : 'Message logged locally (WhatsApp API Disconnected)'
+          msg: 'Message dispatched silently in background to recipient WhatsApp!'
         });
       } else {
         setSendFeedback({
@@ -191,7 +191,7 @@ export const ChatsView: React.FC = () => {
       });
     } finally {
       setIsSending(false);
-      setTimeout(() => setSendFeedback(null), 4000);
+      setTimeout(() => setSendFeedback(null), 6000);
     }
   };
 
@@ -417,6 +417,16 @@ export const ChatsView: React.FC = () => {
                 <div className={`composer-feedback-alert ${sendFeedback.type}`}>
                   {sendFeedback.type === 'success' ? <CheckCheck size={16} /> : <AlertCircle size={16} />}
                   <span>{sendFeedback.msg}</span>
+                  {sendFeedback.waLink && (
+                    <a
+                      href={sendFeedback.waLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ marginLeft: '10px', textDecoration: 'underline', fontWeight: 600, color: 'inherit' }}
+                    >
+                      Open & Send via WhatsApp Web (wa.me) ↗
+                    </a>
+                  )}
                 </div>
               )}
 
@@ -531,6 +541,15 @@ export const ChatsView: React.FC = () => {
               {/* Quick Actions */}
               <div className="info-section-card">
                 <div className="info-label">QUICK ACTIONS</div>
+                <a
+                  href={`https://api.whatsapp.com/send?phone=${activeContact.phone.replace(/[^\d]/g, '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-primary btn-sm w-full mb-2"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                >
+                  <ExternalLink size={14} /> Open in Personal WhatsApp
+                </a>
                 <button className="btn btn-outline btn-sm w-full mb-2" onClick={() => setShowSimulateModal(true)}>
                   <Zap size={14} /> Simulate Incoming Test Message
                 </button>

@@ -69,6 +69,11 @@ export interface WhatsAppSettings {
   lastChecked?: string;
   webhookUrl?: string;
   webhookSecret?: string;
+  gatewayProvider?: 'EASY_GATEWAY' | 'DIRECT_WHATSAPP_WEB' | 'META_CLOUD' | 'SIMULATOR';
+  easyGatewayUrl?: string;
+  easyApiKey?: string;
+  personalPhoneAlerts?: string;
+  autoOpenWebWhatsApp?: boolean;
 }
 
 export interface PaymentRecord {
