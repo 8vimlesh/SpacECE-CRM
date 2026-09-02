@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { whatsappSettingsService } from '../services/whatsappSettingsService';
-import { sendWhatsAppMessage, sendPersonalWhatsAppAlert } from '../services/whatsappService';
+import { sendWhatsAppMessage } from '../services/whatsappService';
 import type { WhatsAppSettings } from '../db/database';
 import {
   ShieldAlert,
@@ -16,7 +16,6 @@ import {
   Info,
   Send,
   Zap,
-  ExternalLink,
   MessageSquare,
   Globe,
   BellRing,
@@ -105,16 +104,22 @@ export const SettingsView: React.FC = () => {
 
     try {
       let connectionStatus: WhatsAppSettings['connectionStatus'] = 'CONNECTED';
+      let metaErrorMsg: string | null = null;
 
-      // If Meta Cloud is selected, run verification call
+      // If Meta Cloud is selected, run verification call safely
       if (gatewayProvider === 'META_CLOUD') {
-        const apiEndpoint = `https://graph.facebook.com/v18.0/${phoneNumberId.trim()}?access_token=${encodeURIComponent(accessToken.trim())}`;
-        const response = await fetch(apiEndpoint, { method: 'GET' });
-        const data = await response.json();
+        try {
+          const apiEndpoint = `https://graph.facebook.com/v18.0/${phoneNumberId.trim()}?access_token=${encodeURIComponent(accessToken.trim())}`;
+          const response = await fetch(apiEndpoint, { method: 'GET' });
+          const data = await response.json();
 
-        if (!response.ok || !data.id) {
+          if (!response.ok || !data.id) {
+            connectionStatus = 'DISCONNECTED';
+            metaErrorMsg = `Meta API Verification Warning: ${data?.error?.message || response.statusText || 'Invalid credentials'}`;
+          }
+        } catch (fetchErr: any) {
           connectionStatus = 'DISCONNECTED';
-          setApiError(`Meta API Verification Error: ${data?.error?.message || response.statusText}`);
+          metaErrorMsg = `Meta API Network Error: ${fetchErr.message || 'Could not verify Meta API endpoint'}`;
         }
       }
 
@@ -136,15 +141,19 @@ export const SettingsView: React.FC = () => {
       await whatsappSettingsService.save(updatedRecord);
       await refetchSettings();
 
-      setSuccessMessage(
-        gatewayProvider === 'EASY_GATEWAY'
-          ? 'Easy Personal WhatsApp Gateway configured and active!'
-          : gatewayProvider === 'DIRECT_WHATSAPP_WEB'
-          ? 'Direct WhatsApp Web (wa.me) dispatch mode activated!'
-          : gatewayProvider === 'META_CLOUD' && connectionStatus === 'CONNECTED'
-          ? 'Meta Business API verified & connected successfully!'
-          : 'WhatsApp Settings saved successfully.'
-      );
+      if (metaErrorMsg) {
+        setApiError(metaErrorMsg);
+      } else {
+        setSuccessMessage(
+          gatewayProvider === 'EASY_GATEWAY'
+            ? 'Easy Personal WhatsApp Gateway configured and saved!'
+            : gatewayProvider === 'DIRECT_WHATSAPP_WEB'
+            ? 'Direct WhatsApp Web (wa.me) dispatch mode activated!'
+            : gatewayProvider === 'META_CLOUD'
+            ? 'Meta Business API verified & connected successfully!'
+            : 'WhatsApp Settings saved successfully.'
+        );
+      }
     } catch (err: any) {
       setApiError(`Failed to save settings: ${err.message || 'Unknown error'}`);
     } finally {
