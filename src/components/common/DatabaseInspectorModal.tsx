@@ -98,9 +98,9 @@ export const DatabaseInspectorModal: React.FC<DatabaseInspectorModalProps> = ({
   };
   const tableData = getTableData();
 
-  if (!isOpen) return null;
-
   const [isResetting, setIsResetting] = useState(false);
+
+  if (!isOpen) return null;
 
   const handleResetSeed = async () => {
     if (window.confirm('Are you sure you want to re-sync and re-seed the Supabase PostgreSQL database?')) {
