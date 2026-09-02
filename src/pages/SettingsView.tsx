@@ -14,7 +14,13 @@ import {
   AlertCircle,
   Unplug,
   Send,
+<<<<<<< HEAD
   ExternalLink,
+=======
+  Zap,
+  MessageSquare,
+  Globe,
+>>>>>>> 59408db915c8f4dc6bfb56a9ef3357e2c80f2be7
   BellRing,
   Smartphone,
   Key,
@@ -90,16 +96,30 @@ export const SettingsView: React.FC = () => {
 
     try {
       let connectionStatus: WhatsAppSettings['connectionStatus'] = 'CONNECTED';
+      let metaErrorMsg: string | null = null;
 
+<<<<<<< HEAD
       // Meta Cloud verification call against Graph API
       try {
         const apiEndpoint = `https://graph.facebook.com/v18.0/${phoneNumberId.trim()}?access_token=${encodeURIComponent(accessToken.trim())}`;
         const response = await fetch(apiEndpoint, { method: 'GET' });
         const data = await response.json();
+=======
+      // If Meta Cloud is selected, run verification call safely
+      if (gatewayProvider === 'META_CLOUD') {
+        try {
+          const apiEndpoint = `https://graph.facebook.com/v18.0/${phoneNumberId.trim()}?access_token=${encodeURIComponent(accessToken.trim())}`;
+          const response = await fetch(apiEndpoint, { method: 'GET' });
+          const data = await response.json();
+>>>>>>> 59408db915c8f4dc6bfb56a9ef3357e2c80f2be7
 
-        if (!response.ok || !data.id) {
+          if (!response.ok || !data.id) {
+            connectionStatus = 'DISCONNECTED';
+            metaErrorMsg = `Meta API Verification Warning: ${data?.error?.message || response.statusText || 'Invalid credentials'}`;
+          }
+        } catch (fetchErr: any) {
           connectionStatus = 'DISCONNECTED';
-          setApiError(`Meta API Verification Error: ${data?.error?.message || response.statusText}`);
+          metaErrorMsg = `Meta API Network Error: ${fetchErr.message || 'Could not verify Meta API endpoint'}`;
         }
       } catch (verifyErr: any) {
         console.warn('Meta Graph verification check error:', verifyErr);
@@ -120,10 +140,25 @@ export const SettingsView: React.FC = () => {
       await whatsappSettingsService.save(updatedRecord);
       await refetchSettings();
 
+<<<<<<< HEAD
       if (connectionStatus === 'CONNECTED') {
         setSuccessMessage('Meta WhatsApp Cloud API verified and connected successfully!');
       } else {
         setSuccessMessage('Credentials saved in CRM database.');
+=======
+      if (metaErrorMsg) {
+        setApiError(metaErrorMsg);
+      } else {
+        setSuccessMessage(
+          gatewayProvider === 'EASY_GATEWAY'
+            ? 'Easy Personal WhatsApp Gateway configured and saved!'
+            : gatewayProvider === 'DIRECT_WHATSAPP_WEB'
+            ? 'Direct WhatsApp Web (wa.me) dispatch mode activated!'
+            : gatewayProvider === 'META_CLOUD'
+            ? 'Meta Business API verified & connected successfully!'
+            : 'WhatsApp Settings saved successfully.'
+        );
+>>>>>>> 59408db915c8f4dc6bfb56a9ef3357e2c80f2be7
       }
     } catch (err: any) {
       setApiError(`Failed to save settings: ${err.message || 'Unknown error'}`);
