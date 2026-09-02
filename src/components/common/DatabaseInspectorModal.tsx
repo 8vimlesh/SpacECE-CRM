@@ -287,14 +287,15 @@ export const DatabaseInspectorModal: React.FC<DatabaseInspectorModalProps> = ({
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          background-color: var(--slate-900);
+          background-color: #0f172a;
           border-radius: var(--radius-lg);
-          color: var(--slate-100);
+          color: #f8fafc;
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .table-meta-bar {
           padding: 0.875rem 1.25rem;
-          background-color: var(--navy-900);
+          background-color: #0b1329;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           display: flex;
           justify-content: space-between;
@@ -308,11 +309,11 @@ export const DatabaseInspectorModal: React.FC<DatabaseInspectorModalProps> = ({
 
         .table-meta-bar p {
           font-size: 0.75rem;
-          color: var(--slate-400);
+          color: #94a3b8;
         }
 
         .highlight-tbl {
-          color: var(--primary-500);
+          color: #fbbf24;
           font-family: monospace;
         }
 
@@ -329,7 +330,7 @@ export const DatabaseInspectorModal: React.FC<DatabaseInspectorModalProps> = ({
           align-items: center;
           gap: 0.5rem;
           font-size: 0.75rem;
-          color: var(--emerald-500);
+          color: #34d399;
           margin-bottom: 0.5rem;
           font-weight: 600;
         }
@@ -337,13 +338,26 @@ export const DatabaseInspectorModal: React.FC<DatabaseInspectorModalProps> = ({
         .json-code {
           flex: 1;
           overflow: auto;
-          background-color: rgba(0, 0, 0, 0.4);
-          padding: 1rem;
+          background-color: #070c19;
+          padding: 1.25rem;
           border-radius: var(--radius-md);
-          font-family: 'Fira Code', monospace;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          font-family: 'Consolas', 'Fira Code', 'Monaco', monospace;
           font-size: 0.8125rem;
           color: #38bdf8;
-          line-height: 1.4;
+          line-height: 1.5;
+        }
+
+        .json-code::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .json-code::-webkit-scrollbar-track {
+          background: #070c19;
+        }
+        .json-code::-webkit-scrollbar-thumb {
+          background: #334155;
+          border-radius: 4px;
         }
 
         .spin {
