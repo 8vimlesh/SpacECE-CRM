@@ -57,17 +57,43 @@ export const DatabaseInspectorModal: React.FC<DatabaseInspectorModalProps> = ({
   const settingsCount = settingsList?.length || 0;
   const subscriptionCount = subList?.length || 0;
 
+  const safeJsonStringify = (data: any) => {
+    try {
+      const cache = new Set();
+      return JSON.stringify(
+        data,
+        (key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            if (cache.has(value)) {
+              return '[Circular]';
+            }
+            cache.add(value);
+          }
+          return value;
+        },
+        2
+      );
+    } catch (err) {
+      return `Error displaying database records: ${String(err)}`;
+    }
+  };
+
   const getTableData = () => {
-    switch (selectedTable) {
-      case 'contacts': return contacts || [];
-      case 'inquiries': return inquiries || [];
-      case 'messages': return messages || [];
-      case 'templates': return templates || [];
-      case 'campaigns': return campaigns || [];
-      case 'media': return media || [];
-      case 'whatsAppSettings': return settingsList || [];
-      case 'subscription': return subList || [];
-      default: return [];
+    try {
+      switch (selectedTable) {
+        case 'contacts': return contacts || [];
+        case 'inquiries': return inquiries || [];
+        case 'messages': return messages || [];
+        case 'templates': return templates || [];
+        case 'campaigns': return campaigns || [];
+        case 'media': return media || [];
+        case 'whatsAppSettings': return settingsList || [];
+        case 'subscription': return subList || [];
+        default: return [];
+      }
+    } catch (err) {
+      console.error('Inspector data fetch error:', err);
+      return [];
     }
   };
   const tableData = getTableData();
@@ -150,7 +176,7 @@ export const DatabaseInspectorModal: React.FC<DatabaseInspectorModalProps> = ({
                   <span>{tableData.length} IndexedDB Record(s) Loaded</span>
                 </div>
                 <pre className="json-code">
-                  {JSON.stringify(tableData, null, 2)}
+                  {safeJsonStringify(tableData)}
                 </pre>
               </div>
             ) : (
