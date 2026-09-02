@@ -1,4 +1,6 @@
 import React from 'react';
+import { useSupabaseData } from '../../hooks/useSupabaseData';
+import { whatsappSettingsService } from '../../services/whatsappSettingsService';
 import {
   LayoutDashboard,
   MessageSquare,
@@ -65,6 +67,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   onOpenDbInspector
 }) => {
+  const { data: settingsList } = useSupabaseData('whatsapp_settings', async () => {
+    const s = await whatsappSettingsService.get();
+    return s ? [s] : [];
+  });
+  const settings = settingsList?.[0];
+  const isConnected = settings?.connectionStatus === 'CONNECTED' && Boolean(settings?.accessToken && settings?.phoneNumberId);
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -102,6 +111,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.key;
+            let badgeText = item.badge;
+            let badgeType = item.badgeType;
+
+            if (item.key === 'settings') {
+              if (isConnected) {
+                badgeText = 'API Active';
+                badgeType = 'info';
+              } else {
+                badgeText = 'Pending API';
+                badgeType = 'warning';
+              }
+            }
+
             return (
               <button
                 key={item.key}
@@ -113,9 +135,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <Icon className="nav-icon" size={20} />
                 <span className="nav-label">{item.label}</span>
-                {item.badge && (
-                  <span className={`nav-badge ${item.badgeType || 'info'}`}>
-                    {item.badge}
+                {badgeText && (
+                  <span className={`nav-badge ${badgeType || 'info'}`}>
+                    {badgeText}
                   </span>
                 )}
               </button>
@@ -130,8 +152,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>DB Inspector (8 Tables)</span>
           </button>
           <div className="system-status">
-            <span className="status-indicator warning"></span>
-            <span className="status-text">WhatsApp API: <strong>Disconnected</strong></span>
+            <span className={`status-indicator ${isConnected ? 'success' : 'warning'}`}></span>
+            <span className="status-text">WhatsApp API: <strong>{isConnected ? 'Connected' : 'Disconnected'}</strong></span>
           </div>
         </div>
       </aside>
@@ -356,6 +378,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .status-indicator.warning {
           background-color: var(--amber-500);
           box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+        }
+
+        .status-indicator.success {
+          background-color: #10b981;
+          box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
         }
       `}</style>
     </>
