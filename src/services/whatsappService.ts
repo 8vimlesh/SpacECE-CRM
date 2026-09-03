@@ -53,35 +53,41 @@ export async function sendWhatsAppMessage({
     diagnosticAdvice = 'Please add your VITE_WHATSAPP_PHONE_NUMBER_ID and VITE_WHATSAPP_API_TOKEN in .env or Settings.';
   } else {
     try {
-      const endpoint = `https://graph.facebook.com/v18.0/${settings.phoneNumberId}/messages`;
+      // Calls our own /api/whatsapp-send serverless function instead of
+      // graph.facebook.com directly. Meta's Graph API does not return
+      // CORS headers for browser-origin requests, so a direct fetch()
+      // from here would be blocked before it ever reached Meta.
+      // The serverless function makes the real call server-to-server.
+      const endpoint = '/api/whatsapp-send';
 
       // Build payload: use Template payload if templateName specified, otherwise text payload
       const payloadBody = templateName
         ? {
-            messaging_product: 'whatsapp',
-            recipient_type: 'individual',
-            to: cleanPhoneDigits,
-            type: 'template',
-            template: {
-              name: templateName,
-              language: { code: templateLanguage }
-            }
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: cleanPhoneDigits,
+          type: 'template',
+          template: {
+            name: templateName,
+            language: { code: templateLanguage }
           }
+        }
         : {
-            messaging_product: 'whatsapp',
-            recipient_type: 'individual',
-            to: cleanPhoneDigits,
-            type: 'text',
-            text: { body: messageText }
-          };
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: cleanPhoneDigits,
+          type: 'text',
+          text: { body: messageText }
+        };
 
       let response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${settings.accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payloadBody)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumberId: settings.phoneNumberId,
+          accessToken: settings.accessToken,
+          payload: payloadBody
+        })
       });
 
       let data = await response.json();
@@ -101,11 +107,12 @@ export async function sendWhatsAppMessage({
         };
         response = await fetch(endpoint, {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${settings.accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(fallbackPayload)
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phoneNumberId: settings.phoneNumberId,
+            accessToken: settings.accessToken,
+            payload: fallbackPayload
+          })
         });
         data = await response.json();
       }

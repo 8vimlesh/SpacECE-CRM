@@ -92,10 +92,20 @@ export const SettingsView: React.FC = () => {
       let connectionStatus: WhatsAppSettings['connectionStatus'] = 'CONNECTED';
       let metaErrorMsg: string | null = null;
 
-      // Meta Cloud verification call against Graph API
+      // Meta Cloud verification call — routed through our own /api/whatsapp-verify
+      // serverless function rather than calling graph.facebook.com directly from
+      // the browser, since Meta does not send CORS headers for browser-origin
+      // requests and a direct fetch() here would fail regardless of whether the
+      // credentials are valid.
       try {
-        const apiEndpoint = `https://graph.facebook.com/v18.0/${phoneNumberId.trim()}?access_token=${encodeURIComponent(accessToken.trim())}`;
-        const response = await fetch(apiEndpoint, { method: 'GET' });
+        const response = await fetch('/api/whatsapp-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phoneNumberId: phoneNumberId.trim(),
+            accessToken: accessToken.trim()
+          })
+        });
         const data = await response.json();
 
         if (!response.ok || !data.id) {

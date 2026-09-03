@@ -62,7 +62,7 @@ export const DatabaseInspectorModal: React.FC<DatabaseInspectorModalProps> = ({
       const cache = new Set();
       return JSON.stringify(
         data,
-        (key, value) => {
+        (_key, value) => {
           if (typeof value === 'object' && value !== null) {
             if (cache.has(value)) {
               return '[Circular]';

@@ -21,10 +21,17 @@ function getEnvSettings(): Partial<WhatsAppSettings> {
 function resolveConnectionStatus(
   settings: WhatsAppSettings
 ): WhatsAppSettings['connectionStatus'] {
-  if (settings.accessToken && settings.phoneNumberId) {
-    return 'CONNECTED';
+  // Credentials missing entirely -> definitely disconnected.
+  if (!settings.accessToken || !settings.phoneNumberId) {
+    return 'DISCONNECTED';
   }
-  return 'DISCONNECTED';
+  // Credentials are present: trust the status that was actually recorded by
+  // the last Meta verification call (see SettingsView's handleSaveSettings),
+  // instead of assuming CONNECTED just because the fields are non-empty.
+  // Previously this always returned 'CONNECTED' here, which meant a failed
+  // verification could still show as "Connected" the next time settings
+  // were re-fetched.
+  return settings.connectionStatus === 'CONNECTED' ? 'CONNECTED' : 'DISCONNECTED';
 }
 
 export const whatsappSettingsService = {
