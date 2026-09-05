@@ -1,26 +1,30 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseActive, disableSupabaseSync } from '../lib/supabase';
 import { db, type MediaItem } from '../db/database';
 
 export const mediaService = {
   async getAll(): Promise<MediaItem[]> {
-    try {
-      const { data, error } = await supabase
-        .from('media')
-        .select('*')
-        .order('id', { ascending: false });
+    if (isSupabaseActive()) {
+      try {
+        const { data, error } = await supabase
+          .from('media')
+          .select('*')
+          .order('id', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        return data.map((row) => ({
-          id: row.id,
-          fileName: row.file_name,
-          fileType: row.file_type,
-          fileUrl: row.file_url,
-          uploadDate: row.upload_date || row.created_at,
-          size: row.size || '0 KB'
-        }));
+        if (error) {
+          disableSupabaseSync();
+        } else if (data && data.length > 0) {
+          return data.map((row) => ({
+            id: row.id,
+            fileName: row.file_name,
+            fileType: row.file_type,
+            fileUrl: row.file_url,
+            uploadDate: row.upload_date || row.created_at,
+            size: row.size || '0 KB'
+          }));
+        }
+      } catch {
+        disableSupabaseSync();
       }
-    } catch (e) {
-      console.warn('Supabase media fetch error, fallback to local DB:', e);
     }
     return await db.media.toArray();
   },

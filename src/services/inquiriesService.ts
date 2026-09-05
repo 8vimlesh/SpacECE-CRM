@@ -1,26 +1,30 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseActive, disableSupabaseSync } from '../lib/supabase';
 import { db, type Inquiry } from '../db/database';
 
 export const inquiriesService = {
   async getAll(): Promise<Inquiry[]> {
-    try {
-      const { data, error } = await supabase
-        .from('inquiries')
-        .select('*')
-        .order('id', { ascending: true });
+    if (isSupabaseActive()) {
+      try {
+        const { data, error } = await supabase
+          .from('inquiries')
+          .select('*')
+          .order('id', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data.map((row) => ({
-          id: row.id,
-          contactId: row.contact_id,
-          pipelineStage: row.pipeline_stage as Inquiry['pipelineStage'],
-          followUpDate: row.follow_up_date || '',
-          notes: row.notes || '',
-          createdAt: row.created_at
-        }));
+        if (error) {
+          disableSupabaseSync();
+        } else if (data && data.length > 0) {
+          return data.map((row) => ({
+            id: row.id,
+            contactId: row.contact_id,
+            pipelineStage: row.pipeline_stage as Inquiry['pipelineStage'],
+            followUpDate: row.follow_up_date || '',
+            notes: row.notes || '',
+            createdAt: row.created_at
+          }));
+        }
+      } catch {
+        disableSupabaseSync();
       }
-    } catch (e) {
-      console.warn('Supabase inquiries fetch error, fallback to local DB:', e);
     }
     return await db.inquiries.toArray();
   },

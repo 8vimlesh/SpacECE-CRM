@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseActive, disableSupabaseSync } from '../lib/supabase';
 import { db, type WhatsAppSettings } from '../db/database';
 
 function getEnvSettings(): Partial<WhatsAppSettings> {
@@ -48,32 +48,36 @@ export const whatsappSettingsService = {
 
     let currentSettings: WhatsAppSettings | null = null;
 
-    try {
-      const { data, error } = await supabase
-        .from('whatsapp_settings')
-        .select('*')
-        .limit(1);
+    if (isSupabaseActive()) {
+      try {
+        const { data, error } = await supabase
+          .from('whatsapp_settings')
+          .select('*')
+          .limit(1);
 
-      if (!error && data && data.length > 0) {
-        const row = data[0];
-        currentSettings = {
-          id: row.id,
-          displayName: row.display_name || localRecord?.displayName || 'Spacece India Foundation',
-          phoneNumber: row.phone_number || localRecord?.phoneNumber || '',
-          phoneNumberId: row.phone_number_id || localRecord?.phoneNumberId || '',
-          wabaId: row.waba_id || localRecord?.wabaId || '',
-          accessToken: row.access_token || localRecord?.accessToken || '',
-          connectionStatus: (row.connection_status as WhatsAppSettings['connectionStatus']) || localRecord?.connectionStatus || 'DISCONNECTED',
-          lastChecked: row.last_checked || localRecord?.lastChecked,
-          webhookUrl: row.webhook_url || localRecord?.webhookUrl,
-          webhookSecret: row.webhook_secret || localRecord?.webhookSecret,
-          gatewayProvider: 'META_CLOUD',
-          personalPhoneAlerts: row.personal_phone_alerts || localRecord?.personalPhoneAlerts || '',
-          autoOpenWebWhatsApp: false
-        };
+        if (error) {
+          disableSupabaseSync();
+        } else if (data && data.length > 0) {
+          const row = data[0];
+          currentSettings = {
+            id: row.id,
+            displayName: row.display_name || localRecord?.displayName || 'Spacece India Foundation',
+            phoneNumber: row.phone_number || localRecord?.phoneNumber || '',
+            phoneNumberId: row.phone_number_id || localRecord?.phoneNumberId || '',
+            wabaId: row.waba_id || localRecord?.wabaId || '',
+            accessToken: row.access_token || localRecord?.accessToken || '',
+            connectionStatus: (row.connection_status as WhatsAppSettings['connectionStatus']) || localRecord?.connectionStatus || 'DISCONNECTED',
+            lastChecked: row.last_checked || localRecord?.lastChecked,
+            webhookUrl: row.webhook_url || localRecord?.webhookUrl,
+            webhookSecret: row.webhook_secret || localRecord?.webhookSecret,
+            gatewayProvider: 'META_CLOUD',
+            personalPhoneAlerts: row.personal_phone_alerts || localRecord?.personalPhoneAlerts || '',
+            autoOpenWebWhatsApp: false
+          };
+        }
+      } catch {
+        disableSupabaseSync();
       }
-    } catch (e) {
-      console.warn('Supabase whatsapp_settings fetch warning, using local DB:', e);
     }
 
     if (!currentSettings && localRecord) {

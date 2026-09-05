@@ -1,27 +1,31 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseActive, disableSupabaseSync } from '../lib/supabase';
 import { db, type Message } from '../db/database';
 
 export const messagesService = {
   async getAll(): Promise<Message[]> {
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .order('timestamp', { ascending: true });
+    if (isSupabaseActive()) {
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .order('timestamp', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data.map((row) => ({
-          id: row.id,
-          contactId: row.contact_id,
-          direction: row.direction as Message['direction'],
-          type: row.type as Message['type'],
-          content: row.content || '',
-          status: row.status as Message['status'],
-          timestamp: row.timestamp
-        }));
+        if (error) {
+          disableSupabaseSync();
+        } else if (data && data.length > 0) {
+          return data.map((row) => ({
+            id: row.id,
+            contactId: row.contact_id,
+            direction: row.direction as Message['direction'],
+            type: row.type as Message['type'],
+            content: row.content || '',
+            status: row.status as Message['status'],
+            timestamp: row.timestamp
+          }));
+        }
+      } catch {
+        disableSupabaseSync();
       }
-    } catch (e) {
-      console.warn('Supabase messages fetch error, fallback to local DB:', e);
     }
     return await db.messages.toArray();
   },

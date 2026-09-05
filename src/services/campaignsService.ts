@@ -1,27 +1,31 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseActive, disableSupabaseSync } from '../lib/supabase';
 import { db, type Campaign } from '../db/database';
 
 export const campaignsService = {
   async getAll(): Promise<Campaign[]> {
-    try {
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .order('id', { ascending: true });
+    if (isSupabaseActive()) {
+      try {
+        const { data, error } = await supabase
+          .from('campaigns')
+          .select('*')
+          .order('id', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data.map((row) => ({
-          id: row.id,
-          name: row.name,
-          templateId: row.template_id,
-          audienceType: row.audience_type || '',
-          status: row.status as Campaign['status'],
-          sentCount: row.sent_count ?? 0,
-          createdAt: row.created_at
-        }));
+        if (error) {
+          disableSupabaseSync();
+        } else if (data && data.length > 0) {
+          return data.map((row) => ({
+            id: row.id,
+            name: row.name,
+            templateId: row.template_id,
+            audienceType: row.audience_type || '',
+            status: row.status as Campaign['status'],
+            sentCount: row.sent_count ?? 0,
+            createdAt: row.created_at
+          }));
+        }
+      } catch {
+        disableSupabaseSync();
       }
-    } catch (e) {
-      console.warn('Supabase campaigns fetch error, fallback to local DB:', e);
     }
     return await db.campaigns.toArray();
   },

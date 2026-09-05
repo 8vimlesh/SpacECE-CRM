@@ -1,26 +1,30 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseActive, disableSupabaseSync } from '../lib/supabase';
 import { db, type Template } from '../db/database';
 
 export const templatesService = {
   async getAll(): Promise<Template[]> {
-    try {
-      const { data, error } = await supabase
-        .from('templates')
-        .select('*')
-        .order('id', { ascending: true });
+    if (isSupabaseActive()) {
+      try {
+        const { data, error } = await supabase
+          .from('templates')
+          .select('*')
+          .order('id', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data.map((row) => ({
-          id: row.id,
-          name: row.name,
-          category: row.category,
-          status: row.status as Template['status'],
-          messageBody: row.message_body,
-          createdAt: row.created_at
-        }));
+        if (error) {
+          disableSupabaseSync();
+        } else if (data && data.length > 0) {
+          return data.map((row) => ({
+            id: row.id,
+            name: row.name,
+            category: row.category,
+            status: row.status as Template['status'],
+            messageBody: row.message_body,
+            createdAt: row.created_at
+          }));
+        }
+      } catch {
+        disableSupabaseSync();
       }
-    } catch (e) {
-      console.warn('Supabase templates fetch error, fallback to local DB:', e);
     }
     return await db.templates.toArray();
   },
