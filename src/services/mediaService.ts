@@ -42,7 +42,7 @@ export const mediaService = {
       } else {
         publicUrl = URL.createObjectURL(file);
       }
-    } catch (e) {
+    } catch {
       publicUrl = URL.createObjectURL(file);
     }
 

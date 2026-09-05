@@ -1,24 +1,29 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 export function useSupabaseData<T>(
   tableName: string,
   fetchFn: () => Promise<T[]>,
-  deps: any[] = []
+  _deps: any[] = []
 ): { data: T[] | undefined; loading: boolean; refetch: () => Promise<void> } {
   const [data, setData] = useState<T[] | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
+  const fetchFnRef = useRef(fetchFn);
+  useEffect(() => {
+    fetchFnRef.current = fetchFn;
+  });
+
   const loadData = useCallback(async () => {
     try {
-      const result = await fetchFn();
+      const result = await fetchFnRef.current();
       setData(result);
     } catch (err) {
       console.error(`Error loading Supabase table ${tableName}:`, err);
     } finally {
       setLoading(false);
     }
-  }, deps);
+  }, [tableName]);
 
   useEffect(() => {
     loadData();
@@ -41,14 +46,14 @@ export function useSupabaseData<T>(
             console.warn(`Supabase Realtime subscription warning for ${tableName}:`, status, err);
           }
         });
-    } catch (e) {
-      console.warn(`Failed to set up realtime channel for ${tableName}:`, e);
+    } catch (err) {
+      console.warn(`Failed to set up realtime channel for ${tableName}:`, err);
     }
 
     return () => {
       try {
         supabase.removeChannel(channel);
-      } catch (e) {
+      } catch {
         // Ignore channel removal errors
       }
     };

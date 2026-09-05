@@ -235,7 +235,7 @@ export async function seedDatabase() {
     ]);
   }
 
-  // 10. Seed Automation Rules (Disabled by default)
+  // 10. Seed Automation Rules (ACTIVE by default)
   const rulesCount = await db.automationRules.count();
   if (rulesCount === 0) {
     await db.automationRules.bulkAdd([
@@ -249,10 +249,40 @@ export async function seedDatabase() {
         actions: [
           { actionType: 'SEND_TEMPLATE', params: { templateName: 'admission_inquiry_welcome' } }
         ],
-        status: 'INACTIVE',
-        executionCount: 1,
+        status: 'ACTIVE',
+        executionCount: 12,
         lastExecutedAt: '2026-02-26T10:15:00Z',
         createdAt: '2026-01-01T00:00:00Z'
+      },
+      {
+        name: 'Auto Fee Structure Keyword Responder',
+        description: 'Sends automated fee breakdown when a parent messages "FEES" on WhatsApp.',
+        triggerEvent: 'KEYWORD_MATCH',
+        conditions: [
+          { field: 'incomingText', operator: 'CONTAINS', value: 'FEES', logic: 'AND' }
+        ],
+        actions: [
+          { actionType: 'SEND_TEXT', params: { text: 'Hi! SpacECE Teacher Training annual tuition fee is ₹25,000 (payable in 4 quarterly installments). Reply "APPLY" for registration.' } }
+        ],
+        status: 'ACTIVE',
+        executionCount: 28,
+        lastExecutedAt: '2026-02-27T11:20:00Z',
+        createdAt: '2026-01-02T00:00:00Z'
+      },
+      {
+        name: 'Course Info Keyword Responder',
+        description: 'Sends program details when user messages "COURSES" or "PROGRAMS".',
+        triggerEvent: 'KEYWORD_MATCH',
+        conditions: [
+          { field: 'incomingText', operator: 'CONTAINS', value: 'COURSES', logic: 'AND' }
+        ],
+        actions: [
+          { actionType: 'SEND_TEXT', params: { text: 'SpacECE Programs offered: 1. Early Childhood Care & Education (ECCE) 2. Montessori Teacher Training 3. Nursery Teacher Training (NTT). Reply with course name for brochure!' } }
+        ],
+        status: 'ACTIVE',
+        executionCount: 19,
+        lastExecutedAt: '2026-02-27T08:45:00Z',
+        createdAt: '2026-01-03T00:00:00Z'
       },
       {
         name: 'Interested Parent Follow-Up',
@@ -264,10 +294,10 @@ export async function seedDatabase() {
         actions: [
           { actionType: 'SEND_TEMPLATE', params: { templateName: 'fee_reminder_q3' } }
         ],
-        status: 'INACTIVE',
-        executionCount: 0,
-        lastExecutedAt: null,
-        createdAt: '2026-01-02T00:00:00Z'
+        status: 'ACTIVE',
+        executionCount: 8,
+        lastExecutedAt: '2026-02-25T14:10:00Z',
+        createdAt: '2026-01-04T00:00:00Z'
       },
       {
         name: 'New WhatsApp Message Notification (n8n Webhook)',
@@ -277,10 +307,10 @@ export async function seedDatabase() {
         actions: [
           { actionType: 'SEND_WEBHOOK', params: { webhookUrl: 'https://n8n.spacece.org/webhook/whatsapp-events' } }
         ],
-        status: 'INACTIVE',
-        executionCount: 1,
+        status: 'ACTIVE',
+        executionCount: 45,
         lastExecutedAt: '2026-02-26T14:20:00Z',
-        createdAt: '2026-01-03T00:00:00Z'
+        createdAt: '2026-01-05T00:00:00Z'
       },
       {
         name: 'Admission Confirmation Announcement',
@@ -292,23 +322,26 @@ export async function seedDatabase() {
         actions: [
           { actionType: 'SEND_TEXT', params: { text: 'Congratulations! Your child admission at Spacece India Foundation has been confirmed.' } }
         ],
-        status: 'INACTIVE',
-        executionCount: 0,
-        lastExecutedAt: null,
-        createdAt: '2026-01-04T00:00:00Z'
+        status: 'ACTIVE',
+        executionCount: 6,
+        lastExecutedAt: '2026-02-20T16:00:00Z',
+        createdAt: '2026-01-06T00:00:00Z'
       }
     ]);
   }
 
-  // 7. Seed WhatsApp Settings (DISCONNECTED / PENDING)
+  // 7. Seed WhatsApp Settings (CONNECTED by default)
   await db.whatsAppSettings.add({
-    displayName: 'Spacece India Foundation WhatsApp',
-    phoneNumber: '+91 (Pending API Setup)',
-    phoneNumberId: 'Not Configured',
-    wabaId: 'Not Configured',
-    accessToken: '',
-    connectionStatus: 'DISCONNECTED',
-    lastChecked: 'Never'
+    displayName: 'Spacece India Foundation Official WhatsApp',
+    phoneNumber: '+91 93402 14793',
+    phoneNumberId: '1256873630846914',
+    wabaId: '1079644411247236',
+    accessToken: 'EAAO3nrHudsIBSRKdeyAHTXBviM819bi6BrcrvyViMy5VyriCyAdsXn7MWggVBvKqGsRwQD4h9f9vdhYZCS11WWajbsHV61eZC4dcL1kAFlyQO4L6JDdw63tpT5N7K4fR9qvsiSZCChk0EU3Ntfvp049xA98RoKhByZCN47HgbRM51d5GlCRray9ZCqbLtk1yrCmY7lo9xFuRcbltFpPPPBGXNGGOfgIQ9l2CjfrxfFYxZBZAvpFgTcCK5kJal8cYbqQwfNgSOZB0ZCgYHvSQvBaCZB3mFAPQZDZD',
+    connectionStatus: 'CONNECTED',
+    lastChecked: 'Just Now',
+    gatewayProvider: 'META_CLOUD',
+    webhookUrl: 'https://n8n.spacece.org/webhook/whatsapp-events',
+    webhookSecret: 'spc_sec_99481057102947102947'
   });
 
   // 8. Seed Subscription

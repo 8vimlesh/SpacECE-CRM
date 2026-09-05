@@ -2,7 +2,7 @@ import React from 'react';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import { whatsappSettingsService } from '../../services/whatsappSettingsService';
 import { Menu, Search, Bell, CheckCircle2 } from 'lucide-react';
-import { navItems, type NavItemKey } from './Sidebar';
+import { navItems, type NavItemKey } from './navItems';
 
 interface HeaderProps {
   activeTab: NavItemKey;

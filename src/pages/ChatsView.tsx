@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { contactsService } from '../services/contactsService';
 import { messagesService } from '../services/messagesService';
@@ -14,19 +14,19 @@ import {
   Search,
   Send,
   CheckCheck,
-  ShieldCheck,
-  ShieldAlert,
-  PanelRightOpen,
-  PanelRightClose,
   Phone,
-  Tag,
+  AlertCircle,
+  FileText,
   Plus,
+  RefreshCw,
+  ExternalLink,
   Zap,
   Info,
-  RefreshCw,
-  FileText,
-  AlertCircle,
-  ExternalLink
+  ShieldCheck,
+  ShieldAlert,
+  Tag,
+  PanelRightOpen,
+  PanelRightClose
 } from 'lucide-react';
 
 interface ConversationItem {
@@ -90,45 +90,44 @@ export const ChatsView: React.FC = () => {
   const isApiConnected = settings?.connectionStatus === 'CONNECTED';
 
   // Aggregate Conversations List (Contacts + Messages + Unread Counts)
-  const conversations: ConversationItem[] = (contacts || []).map((contact) => {
-    const contactMsgs = (allMessages || []).filter((m) => m.contactId === contact.id);
-    contactMsgs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  const conversations: ConversationItem[] = useMemo(() => {
+    const list = (contacts || []).map((contact) => {
+      const contactMsgs = (allMessages || []).filter((m) => m.contactId === contact.id);
+      const sortedMsgs = [...contactMsgs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    const latestMessage = contactMsgs[0] || null;
-    const unreadCount = contactMsgs.filter((m) => m.direction === 'in' && m.status !== 'read').length;
+      const latestMessage = sortedMsgs[0] || null;
+      const unreadCount = sortedMsgs.filter((m) => m.direction === 'in' && m.status !== 'read').length;
 
-    return {
-      contact,
-      latestMessage,
-      unreadCount
-    };
-  });
+      return {
+        contact,
+        latestMessage,
+        unreadCount
+      };
+    });
 
-  // Sort conversations by latest message timestamp descending
-  conversations.sort((a, b) => {
-    const timeA = a.latestMessage ? new Date(a.latestMessage.timestamp).getTime() : 0;
-    const timeB = b.latestMessage ? new Date(b.latestMessage.timestamp).getTime() : 0;
-    return timeB - timeA;
-  });
+    list.sort((a, b) => {
+      const timeA = a.latestMessage ? new Date(a.latestMessage.timestamp).getTime() : 0;
+      const timeB = b.latestMessage ? new Date(b.latestMessage.timestamp).getTime() : 0;
+      return timeB - timeA;
+    });
 
-  // Default select first conversation if none selected
-  useEffect(() => {
-    if (!selectedContactId && conversations.length > 0) {
-      setSelectedContactId(conversations[0].contact.id || null);
-    }
-  }, [conversations, selectedContactId]);
+    return list;
+  }, [contacts, allMessages]);
+
+  // Derived Active Selected Contact ID (defaults to first conversation)
+  const activeContactId = selectedContactId ?? (conversations[0]?.contact.id || null);
 
   // Mark conversation as read when selected
   useEffect(() => {
-    if (selectedContactId) {
-      markConversationAsRead(selectedContactId).catch(console.error);
+    if (activeContactId) {
+      markConversationAsRead(activeContactId).catch(console.error);
     }
-  }, [selectedContactId, allMessages]);
+  }, [activeContactId, allMessages]);
 
   // Auto-scroll chat window to bottom on new messages
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [selectedContactId, allMessages]);
+  }, [activeContactId, allMessages]);
 
   // Filter conversations by Search & Filter Tabs
   const filteredConversations = conversations.filter((item) => {
@@ -146,19 +145,19 @@ export const ChatsView: React.FC = () => {
   });
 
   // Active Selected Contact Object
-  const activeContact = (contacts || []).find((c) => c.id === selectedContactId) || null;
+  const activeContact = (contacts || []).find((c) => c.id === activeContactId) || null;
 
   const activeMessages = (allMessages || [])
-    .filter((m) => m.contactId === selectedContactId)
+    .filter((m) => m.contactId === activeContactId)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
   // Linked Inquiry info for active contact
-  const linkedInquiry = (inquiries || []).find((i) => i.contactId === selectedContactId) || null;
+  const linkedInquiry = (inquiries || []).find((i) => i.contactId === activeContactId) || null;
 
   // Send Outgoing WhatsApp Message Handler
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageInput.trim() || !selectedContactId || !activeContact) return;
+    if (!messageInput.trim() || !activeContactId || !activeContact) return;
 
     setIsSending(true);
     setSendFeedback(null);
@@ -167,7 +166,7 @@ export const ChatsView: React.FC = () => {
 
     try {
       const result = await sendWhatsAppMessage({
-        contactId: selectedContactId,
+        contactId: activeContactId,
         recipientPhone: activeContact.phone,
         messageText: textToSend
       });

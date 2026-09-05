@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { inquiriesService } from '../services/inquiriesService';
 import { contactsService } from '../services/contactsService';
@@ -47,8 +47,12 @@ export const InquiriesView: React.FC = () => {
     if (c.id) contactsMap[c.id] = c;
   });
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const tomorrowStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }, []);
 
   const stages: Inquiry['pipelineStage'][] = [
     'New Inquiry',

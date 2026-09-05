@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { whatsappSettingsService } from '../services/whatsappSettingsService';
 import { sendWhatsAppMessage } from '../services/whatsappService';
@@ -55,17 +55,18 @@ export const SettingsView: React.FC = () => {
   const [isTestingDispatch, setIsTestingDispatch] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; msg: string; diagnosticAdvice?: string } | null>(null);
 
-  // Populate state when settings load
-  useEffect(() => {
-    if (settings) {
-      setPersonalPhoneAlerts(settings.personalPhoneAlerts || '');
-      setDisplayName(settings.displayName || 'Spacece India Foundation');
-      setPhoneNumber(settings.phoneNumber || '');
-      setPhoneNumberId(settings.phoneNumberId || '');
-      setWabaId(settings.wabaId || '');
-      setAccessToken(settings.accessToken || '');
-    }
-  }, [settings]);
+  // Populate state when settings load (synced during render when settings arrive)
+  const [initializedSettingsKey, setInitializedSettingsKey] = useState<string | number | null>(null);
+  const currentSettingsKey = settings?.id ?? (settings ? 'loaded' : null);
+  if (settings && initializedSettingsKey !== currentSettingsKey) {
+    setInitializedSettingsKey(currentSettingsKey);
+    setPersonalPhoneAlerts(settings.personalPhoneAlerts || '');
+    setDisplayName(settings.displayName || 'Spacece India Foundation');
+    setPhoneNumber(settings.phoneNumber || '');
+    setPhoneNumberId(settings.phoneNumberId || '');
+    setWabaId(settings.wabaId || '');
+    setAccessToken(settings.accessToken || '');
+  }
 
   const isConnected = settings?.connectionStatus === 'CONNECTED' && Boolean(settings?.accessToken && settings?.phoneNumberId);
 
