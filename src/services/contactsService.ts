@@ -1,28 +1,32 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseActive, disableSupabaseSync } from '../lib/supabase';
 import { db, type Contact } from '../db/database';
 
 export const contactsService = {
   async getAll(): Promise<Contact[]> {
-    try {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('*')
-        .order('id', { ascending: true });
+    if (isSupabaseActive()) {
+      try {
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('*')
+          .order('id', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data.map((row) => ({
-          id: row.id,
-          name: row.name,
-          phone: row.phone,
-          linkedStudentClass: row.linked_student_class || '',
-          tags: row.tags || [],
-          status: row.status as Contact['status'],
-          optedOut: row.opted_out ?? false,
-          createdAt: row.created_at
-        }));
+        if (error) {
+          disableSupabaseSync();
+        } else if (data && data.length > 0) {
+          return data.map((row) => ({
+            id: row.id,
+            name: row.name,
+            phone: row.phone,
+            linkedStudentClass: row.linked_student_class || '',
+            tags: row.tags || [],
+            status: row.status as Contact['status'],
+            optedOut: row.opted_out ?? false,
+            createdAt: row.created_at
+          }));
+        }
+      } catch {
+        disableSupabaseSync();
       }
-    } catch (e) {
-      console.warn('Supabase fetch error, fallback to local DB:', e);
     }
     return await db.contacts.toArray();
   },

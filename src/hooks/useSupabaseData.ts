@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseActive } from '../lib/supabase';
 
 export function useSupabaseData<T>(
   tableName: string,
@@ -18,17 +18,20 @@ export function useSupabaseData<T>(
     try {
       const result = await fetchFnRef.current();
       setData(result);
-    } catch (err) {
-      console.error(`Error loading Supabase table ${tableName}:`, err);
+    } catch {
+      // Fallback handled in services
     } finally {
       setLoading(false);
     }
-  }, [tableName]);
+  }, []);
 
   useEffect(() => {
     loadData();
 
-    // Generate unique channel identifier per hook instance to prevent channel collision errors
+    if (!isSupabaseActive()) {
+      return;
+    }
+
     const channelId = `realtime_${tableName}_${Math.random().toString(36).substring(2, 9)}`;
     const channel = supabase.channel(channelId);
 
@@ -41,13 +44,11 @@ export function useSupabaseData<T>(
             loadData();
           }
         )
-        .subscribe((status, err) => {
-          if (err) {
-            console.warn(`Supabase Realtime subscription warning for ${tableName}:`, status, err);
-          }
+        .subscribe(() => {
+          // Channel subscribed
         });
-    } catch (err) {
-      console.warn(`Failed to set up realtime channel for ${tableName}:`, err);
+    } catch {
+      // Realtime setup ignored if offline
     }
 
     return () => {

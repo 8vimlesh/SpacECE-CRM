@@ -1,30 +1,34 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseActive, disableSupabaseSync } from '../lib/supabase';
 import { db, type AutomationRule, type AutomationLog } from '../db/database';
 
 export const automationService = {
   async getRules(): Promise<AutomationRule[]> {
-    try {
-      const { data, error } = await supabase
-        .from('automation_rules')
-        .select('*')
-        .order('id', { ascending: true });
+    if (isSupabaseActive()) {
+      try {
+        const { data, error } = await supabase
+          .from('automation_rules')
+          .select('*')
+          .order('id', { ascending: true });
 
-      if (!error && data && data.length > 0) {
-        return data.map((row) => ({
-          id: row.id,
-          name: row.name,
-          description: row.description || '',
-          triggerEvent: row.trigger_event as AutomationRule['triggerEvent'],
-          conditions: row.conditions || [],
-          actions: row.actions || [],
-          status: row.status as AutomationRule['status'],
-          executionCount: row.execution_count ?? 0,
-          lastExecutedAt: row.last_executed_at,
-          createdAt: row.created_at
-        }));
+        if (error) {
+          disableSupabaseSync();
+        } else if (data && data.length > 0) {
+          return data.map((row) => ({
+            id: row.id,
+            name: row.name,
+            description: row.description || '',
+            triggerEvent: row.trigger_event as AutomationRule['triggerEvent'],
+            conditions: row.conditions || [],
+            actions: row.actions || [],
+            status: row.status as AutomationRule['status'],
+            executionCount: row.execution_count ?? 0,
+            lastExecutedAt: row.last_executed_at,
+            createdAt: row.created_at
+          }));
+        }
+      } catch {
+        disableSupabaseSync();
       }
-    } catch (e) {
-      console.warn('Supabase automation rules fetch error, fallback to local DB:', e);
     }
     return await db.automationRules.toArray();
   },
