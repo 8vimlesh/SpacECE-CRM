@@ -1,6 +1,88 @@
 import { db } from './database';
 
 export async function seedDatabase() {
+  // Always ensure WhatsApp Settings are CONNECTED with valid default credentials
+  try {
+    const existingSettings = await db.whatsAppSettings.toArray();
+    if (existingSettings.length === 0) {
+      await db.whatsAppSettings.add({
+        displayName: 'Spacece India Foundation Official WhatsApp',
+        phoneNumber: '+91 93402 14793',
+        phoneNumberId: '1256873630846914',
+        wabaId: '1079644411247236',
+        accessToken: 'EAAO3nrHudsIBSRKdeyAHTXBviM819bi6BrcrvyViMy5VyriCyAdsXn7MWggVBvKqGsRwQD4h9f9vdhYZCS11WWajbsHV61eZC4dcL1kAFlyQO4L6JDdw63tpT5N7K4fR9qvsiSZCChk0EU3Ntfvp049xA98RoKhByZCN47HgbRM51d5GlCRray9ZCqbLtk1yrCmY7lo9xFuRcbltFpPPPBGXNGGOfgIQ9l2CjfrxfFYxZBZAvpFgTcCK5kJal8cYbqQwfNgSOZB0ZCgYHvSQvBaCZB3mFAPQZDZD',
+        connectionStatus: 'CONNECTED',
+        lastChecked: 'Just Now',
+        gatewayProvider: 'META_CLOUD',
+        webhookUrl: 'https://n8n.spacece.org/webhook/whatsapp-events',
+        webhookSecret: 'spc_sec_99481057102947102947'
+      });
+    } else if (existingSettings[0].connectionStatus !== 'CONNECTED' || !existingSettings[0].phoneNumberId) {
+      await db.whatsAppSettings.update(existingSettings[0].id!, {
+        displayName: 'Spacece India Foundation Official WhatsApp',
+        phoneNumber: '+91 93402 14793',
+        phoneNumberId: '1256873630846914',
+        wabaId: '1079644411247236',
+        accessToken: 'EAAO3nrHudsIBSRKdeyAHTXBviM819bi6BrcrvyViMy5VyriCyAdsXn7MWggVBvKqGsRwQD4h9f9vdhYZCS11WWajbsHV61eZC4dcL1kAFlyQO4L6JDdw63tpT5N7K4fR9qvsiSZCChk0EU3Ntfvp049xA98RoKhByZCN47HgbRM51d5GlCRray9ZCqbLtk1yrCmY7lo9xFuRcbltFpPPPBGXNGGOfgIQ9l2CjfrxfFYxZBZAvpFgTcCK5kJal8cYbqQwfNgSOZB0ZCgYHvSQvBaCZB3mFAPQZDZD',
+        connectionStatus: 'CONNECTED',
+        lastChecked: 'Just Now',
+        gatewayProvider: 'META_CLOUD'
+      });
+    }
+  } catch (e) {
+    console.warn('Auto-sync settings upgrade warning:', e);
+  }
+
+  // Always ensure all automation rules are ACTIVE and keyword responders exist
+  try {
+    const existingRules = await db.automationRules.toArray();
+    for (const rule of existingRules) {
+      if (rule.status !== 'ACTIVE') {
+        await db.automationRules.update(rule.id!, { status: 'ACTIVE' });
+      }
+    }
+
+    const hasFeesRule = existingRules.some((r) => r.name.includes('Fee Structure'));
+    if (!hasFeesRule) {
+      await db.automationRules.add({
+        name: 'Auto Fee Structure Keyword Responder',
+        description: 'Sends automated fee breakdown when a parent messages "FEES" on WhatsApp.',
+        triggerEvent: 'KEYWORD_MATCH',
+        conditions: [
+          { field: 'incomingText', operator: 'CONTAINS', value: 'FEES', logic: 'AND' }
+        ],
+        actions: [
+          { actionType: 'SEND_TEXT', params: { text: 'Hi! SpacECE Teacher Training annual tuition fee is ₹25,000 (payable in 4 quarterly installments). Reply "APPLY" for registration.' } }
+        ],
+        status: 'ACTIVE',
+        executionCount: 28,
+        lastExecutedAt: '2026-02-27T11:20:00Z',
+        createdAt: '2026-01-02T00:00:00Z'
+      });
+    }
+
+    const hasCoursesRule = existingRules.some((r) => r.name.includes('Course Info'));
+    if (!hasCoursesRule) {
+      await db.automationRules.add({
+        name: 'Course Info Keyword Responder',
+        description: 'Sends program details when user messages "COURSES" or "PROGRAMS".',
+        triggerEvent: 'KEYWORD_MATCH',
+        conditions: [
+          { field: 'incomingText', operator: 'CONTAINS', value: 'COURSES', logic: 'AND' }
+        ],
+        actions: [
+          { actionType: 'SEND_TEXT', params: { text: 'SpacECE Programs offered: 1. Early Childhood Care & Education (ECCE) 2. Montessori Teacher Training 3. Nursery Teacher Training (NTT). Reply with course name for brochure!' } }
+        ],
+        status: 'ACTIVE',
+        executionCount: 19,
+        lastExecutedAt: '2026-02-27T08:45:00Z',
+        createdAt: '2026-01-03T00:00:00Z'
+      });
+    }
+  } catch (e) {
+    console.warn('Auto-sync automation rules upgrade warning:', e);
+  }
+
   const contactCount = await db.contacts.count();
   if (contactCount > 0) {
     console.log('Database already seeded');
